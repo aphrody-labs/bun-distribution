@@ -621,3 +621,12 @@
 [submodule "vendor/tinke"]
 	path = vendor/tinke
 	url = https://github.com/pleonex/tinke.git
+[submodule "vendor/3ds-hbmenu"]
+	path = vendor/3ds-hbmenu
+	url = https://github.com/aphrody-labs/3ds-hbmenu.git
+[submodule "vendor/checkpoint"]
+	path = vendor/checkpoint
+	url = https://github.com/aphrody-labs/checkpoint.git
+[submodule "vendor/fbi"]
+	path = vendor/fbi
+	url = https://github.com/aphrody-labs/fbi.git

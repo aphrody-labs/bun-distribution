@@ -28,6 +28,9 @@ async function main(): Promise<void> {
     // CIA management on top of our Azahar fork; keys come from the owner, never bundled.
     const { ciaMain } = await import("./ctr/cia");
     process.exitCode = await ciaMain(process.argv.slice(4));
+  } else if (command === "3ds" && (appId === "patches" || appId === "addons" || appId === "homebrew")) {
+    const { communityMain } = await import("./ctr/community");
+    process.exitCode = await communityMain(appId, process.argv.slice(4));
   } else if (command === "nds:info" && appId)
     process.exitCode = await runNative(["info", appId, ...(target ? [target] : [])]);
   else if (command === "run" && appId) process.exitCode = await runNative(process.argv.slice(2));
@@ -53,7 +56,7 @@ async function main(): Promise<void> {
   else if (command === "trace" && appId) process.exitCode = await trace(appId);
   else {
     throw new Error(
-      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | shell [--session|status|install-session] | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | 3ds cia <status|info|verify|decrypt|install> ... (CIA management over our Azahar fork) | ds <build|plugins|identify|list|extract|extract-all|png|h3d|exefs> ... (managed DS/3DS formats over bun:dotnet) | nds:info <rom.nds> [--json] | run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] | recompile <image> --target <exe|wasm> [--out DIR] (same as `re recompile`) | qualify <appid> | launch <appid> | trace <appid>",
+      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | shell [--session|status|install-session] | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | 3ds cia <status|info|verify|decrypt|install> ... (CIA management over our Azahar fork) | 3ds patches <list|apply> | 3ds addons <list|install> | 3ds homebrew <build|install|run> (Azahar user-dir tooling) | ds <build|plugins|identify|list|extract|extract-all|png|h3d|exefs> ... (managed DS/3DS formats over bun:dotnet) | nds:info <rom.nds> [--json] | run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] | recompile <image> --target <exe|wasm> [--out DIR] (same as `re recompile`) | qualify <appid> | launch <appid> | trace <appid>",
     );
   }
 }

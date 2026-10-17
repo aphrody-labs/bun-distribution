@@ -88,7 +88,7 @@ cmake --build ~/build/azahar --target citra_cia
 ```
 
 `ENABLE_BUILTIN_KEYBLOB=OFF` keeps the key store explicit: only `sysdata/keys.txt` is used. The
-binary is `~/build/azahar/bin/Release/azahar-cia` (or `bin/azahar-cia`). The wrapper looks for it
+binary is `~/build/azahar/bin/Release/azahar-cia`. The wrapper looks for it
 in `AZAHAR_CIA`, `usr/lib/azahar-cia/`, `usr/bin/` and `PATH`.
 
 ## Assets

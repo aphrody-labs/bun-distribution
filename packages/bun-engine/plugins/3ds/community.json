@@ -1,0 +1,22 @@
+{
+  "addons": [
+    {
+      "id": "azahar-rpc",
+      "kind": "script",
+      "source": "vendor/azahar/dist/scripting/AzaharRPC.py",
+      "dest": "scripts/AzaharRPC.py",
+      "sha256": "513fa299c51c08645176f1658d277f9d5297e3f12f182075544e35d7284aa765",
+      "license": "GPL-2.0-or-later",
+      "description": "Python client for Azahar's RPC server (memory read/write, process list, screenshots, performance stats)."
+    }
+  ],
+  "homebrew": [
+    { "id": "3ds-hbmenu", "path": "vendor/3ds-hbmenu", "kind": "launcher", "license": "see vendor/3ds-hbmenu/LICENSE", "description": "The Homebrew Launcher menu." },
+    { "id": "checkpoint", "path": "vendor/checkpoint", "kind": "save-manager", "license": "see vendor/checkpoint/LICENSE", "description": "Save management homebrew." },
+    { "id": "fbi", "path": "vendor/fbi", "kind": "title-manager", "license": "see vendor/fbi/LICENSE.txt", "description": "Title manager homebrew (archived upstream)." },
+    { "id": "iecode-starter", "path": "packages/iecode-cpp/homebrew/3ds", "kind": "template", "license": "repository license", "description": "3DS starter project built with devkitARM and libctru." }
+  ],
+  "pointers": [
+    { "id": "godmode9", "url": "https://github.com/d0k3/GodMode9", "note": "Documentation pointer only. Dumps and decrypts titles on a console you own; nothing from it is vendored and no keys or firmware are handled here." }
+  ]
+}
