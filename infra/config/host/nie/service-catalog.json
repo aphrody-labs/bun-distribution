@@ -25,6 +25,22 @@
         "iecode-web",
         "rg-website"
       ]
+    },
+    {
+      "id": "rg-website",
+      "application": "rg",
+      "kind": "next-standalone",
+      "runtime": "bun",
+      "unit": "rg-website.service",
+      "health": "http://127.0.0.1:3100/",
+      "port": 3100,
+      "sourceRepo": "bun-os",
+      "workingDirectory": "/home/ubuntu/apps/rg/current/apps/rg-website",
+      "environmentFile": "/etc/rg/rg.env",
+      "publicOrigin": "https://rosegriffon.fr",
+      "publicProxy": "nginx",
+      "public": true,
+      "status": "active"
     }
   ],
   "policies": {

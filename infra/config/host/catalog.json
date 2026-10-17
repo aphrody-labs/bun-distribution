@@ -142,6 +142,13 @@
       "targetHost": "vps"
     },
     {
+      "service": "rg-website",
+      "unit": "rg-website.service",
+      "path": "systemd/rg/rg-website.service",
+      "ownerRepo": "iecode",
+      "targetHost": "vps"
+    },
+    {
       "service": "nie-model-serve",
       "unit": "nie-model-serve.service",
       "path": "systemd/nie/nie-model-serve.service",
@@ -744,6 +751,13 @@
       "targetHost": "vps",
       "site": "bun.aphrody.com",
       "service": "aphrody-bun-site"
+    },
+    {
+      "file": "nginx/rg/rosegriffon.fr.conf",
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "site": "rosegriffon.fr",
+      "service": "rg-website"
     },
     {
       "file": "nginx/nie/nie.aphrody.app.conf",

@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# Rose Griffon website (apps/rg-website, Next standalone) behind nginx on rosegriffon.fr
+# (nginx/rg/rosegriffon.fr.conf). Built in the bun-os checkout with
+#   set -a; . /etc/rg/rg.env; set +a; cd apps/rg-website && bun run build
+# then the standalone tree is synced to /home/ubuntu/apps/rg/current.
+# /etc/rg/rg.env holds the production environment (root:ubuntu 0640).
+[Unit]
+Description=Rose Griffon website (rosegriffon.fr)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/apps/rg/current/apps/rg-website
+EnvironmentFile=/etc/rg/rg.env
+Environment=PORT=3100 HOSTNAME=127.0.0.1 NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+ExecStart=/home/ubuntu/.local/bin/bun /home/ubuntu/apps/rg/current/apps/rg-website/server.js
+Restart=always
+RestartSec=2
+MemoryHigh=3G
+MemoryMax=4G
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/home/ubuntu/apps/rg/current/apps/rg-website/.next/cache
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rg-website
+
+[Install]
+WantedBy=multi-user.target
