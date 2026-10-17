@@ -22,6 +22,8 @@ host = [
     "dep:clap",
     "dep:aphrody-nie-data",
     "dep:aphrody-nie-explore",
+    "dep:aphrody-nie-sql",
+    "dep:tokio",
     "dep:rusqlite",
     "dep:serde_json",
     "dep:sha2",

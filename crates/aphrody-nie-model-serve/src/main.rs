@@ -57,7 +57,8 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
 use clap::Parser;
-use rusqlite::{Connection, OpenFlags};
+use aphrody_nie_sql::Value as SqlValue;
+use mirror::Mirror;
 use serde_json::Value;
 use tracing::{debug, error, info, warn};
 
@@ -95,9 +96,10 @@ struct Cli {
     #[arg(long)]
     glb_dir: Option<PathBuf>,
 
-    /// Miroir SQLite (inagle_*). Résolution automatique si absent.
+    /// Miroir inagle_* : fichier SQLite ou URL PostgreSQL (`NIE_PG_URL`, `INAGLE_DATABASE_URL`).
+    /// Résolution automatique si absent.
     #[arg(long)]
-    db: Option<PathBuf>,
+    db: Option<String>,
 
     /// Manifeste CRC32→chemin G4MD (var/model-crc-manifest.ndjson).
     #[arg(long)]
@@ -298,8 +300,8 @@ struct State {
     /// internal_code → body_type_idx (depuis var/body-type-manifest.ndjson).
     body_map: HashMap<String, u8>,
     cache_dir: PathBuf,
-    /// SQLite mirror : résolution uniforme via inagle_*.
-    db_path: Option<PathBuf>,
+    /// Miroir inagle_* (SQLite ou PostgreSQL) : résolution uniforme.
+    db_path: Option<Mirror>,
     /// Répertoire des layouts de menu (`<screen>.json`).
     layout_dir: PathBuf,
     /// Répertoire des `*_menu_setting.cfg.bin.json` (arbre d'écrans `/menu-tree.json`).
@@ -615,43 +617,29 @@ struct UniformCrcs {
 ///
 /// Chaîne : series → season_key → inagle_teams.kits → kit_id → inagle_uniforms.models →
 /// CRC du haut, des chaussures et des gants (l'entrée `typeId = 0`, sinon la première).
-fn resolve_uniform_crcs(db_path: &Path, internal_code: &str) -> Option<UniformCrcs> {
-    let conn = Connection::open_with_flags(
-        db_path,
-        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-    )
-    .ok()?;
-    conn.pragma_update(None, "journal_mode", "WAL").ok();
-
+fn resolve_uniform_crcs(db: &Mirror, internal_code: &str) -> Option<UniformCrcs> {
     // 1. Récupère series + team ID principal du personnage.
-    let (series_str, team_id): (String, Option<String>) = conn
-        .query_row(
-            "SELECT series, substr(data,1,2000) FROM inagle_characters \
-             WHERE internal_code=?1 ORDER BY is_primary DESC NULLS LAST, rowid ASC LIMIT 1",
-            [internal_code],
-            |row| {
-                let series: String = row.get(0).unwrap_or_default();
-                let data_raw: String = row.get(1).unwrap_or_default();
-                let team_id = serde_json::from_str::<Value>(&data_raw).ok().and_then(|v| {
-                    v["teams"]
-                        .as_array()
-                        .and_then(|arr| arr.first())
-                        .and_then(|t| t["id"].as_str().map(str::to_string))
-                });
-                Ok((series, team_id))
-            },
-        )
-        .ok()?;
-
-    let team_id = team_id?;
+    let result = db.query(
+        "SELECT series, substr(CAST(data AS TEXT),1,2000) FROM inagle_characters          WHERE internal_code=$1 ORDER BY is_primary DESC NULLS LAST LIMIT 1",
+        &[SqlValue::Text(internal_code.to_owned())],
+    )?;
+    let row = result.rows.into_iter().next()?;
+    let series_str = mirror::text(&row.values[0]);
+    let data_raw = mirror::text(&row.values[1]);
+    let team_id = serde_json::from_str::<Value>(&data_raw).ok().and_then(|v| {
+        v["teams"]
+            .as_array()
+            .and_then(|arr| arr.first())
+            .and_then(|t| t["id"].as_str().map(str::to_string))
+    })?;
     let season = SeasonKey::from_series(&series_str);
 
     // 2. Récupère le kit_id depuis inagle_teams.
-    let kit_id: String = conn
-        .query_row("SELECT data FROM inagle_teams WHERE id=?1 LIMIT 1", [&team_id], |row| {
-            row.get::<_, String>(0)
-        })
-        .ok()
+    let kit_id: String = db
+        .first_text(
+            "SELECT CAST(data AS TEXT) FROM inagle_teams WHERE id=$1 LIMIT 1",
+            &[SqlValue::Text(team_id)],
+        )
         .and_then(|data_raw| {
             serde_json::from_str::<Value>(&data_raw)
                 .ok()
@@ -659,13 +647,10 @@ fn resolve_uniform_crcs(db_path: &Path, internal_code: &str) -> Option<UniformCr
         })?;
 
     // 3. Les CRC de modèles depuis inagle_uniforms (name_id = kit_id).
-    let models_raw: String = conn
-        .query_row(
-            "SELECT models FROM inagle_uniforms WHERE name_id=?1 ORDER BY type_id ASC LIMIT 1",
-            [&kit_id],
-            |row| row.get::<_, String>(0),
-        )
-        .ok()?;
+    let models_raw = db.first_text(
+        "SELECT CAST(models AS TEXT) FROM inagle_uniforms WHERE name_id=$1 ORDER BY type_id ASC LIMIT 1",
+        &[SqlValue::Text(kit_id.clone())],
+    )?;
     let models: Value = serde_json::from_str(&models_raw).ok()?;
     let arr = models.as_array()?;
     let entry = arr.iter().find(|e| e["typeId"].as_u64() == Some(0)).or_else(|| arr.first())?;
@@ -3921,6 +3906,8 @@ fn spawn_preload(state: Arc<State>, workers: usize) {
 /// these initializers although both already are `const { … }` (it fired on `IS_HEAD` alone
 /// before `IS_PRIVATE` existed).
 #[allow(clippy::missing_const_for_thread_local)]
+mod mirror;
+
 mod request_flags {
     thread_local! {
         pub(super) static IS_HEAD: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -5311,28 +5298,23 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             respond_text(&mut stream, 503, "Service Unavailable", "miroir SQLite absent");
             return;
         };
-        let dialogue = Connection::open_with_flags(&db, OpenFlags::SQLITE_OPEN_READ_ONLY)
-            .ok()
-            .and_then(|conn| {
-                let n: i64 = conn
-                    .query_row(
-                        "SELECT COUNT(*) FROM inagle_event_subtitles \
-                         WHERE text_en IS NOT NULL AND length(text_en)>5",
-                        [],
-                        |r| r.get(0),
-                    )
-                    .unwrap_or(0);
-                if n == 0 {
-                    return None;
-                }
-                conn.query_row(
-                    "SELECT COALESCE(line_label,'???'), COALESCE(text_fr, text_en) \
-                     FROM inagle_event_subtitles WHERE text_en IS NOT NULL AND length(text_en)>5 \
-                     ORDER BY event_id, line_index LIMIT 1 OFFSET ?1",
-                    [offset % n],
-                    |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
-                )
-                .ok()
+        let filter = "text_en IS NOT NULL AND length(text_en)>5";
+        let dialogue = db
+            .first_text(
+                &format!("SELECT CAST(COUNT(*) AS TEXT) FROM inagle_event_subtitles WHERE {filter}"),
+                &[],
+            )
+            .and_then(|n| n.parse::<i64>().ok())
+            .filter(|n| *n > 0)
+            .and_then(|n| {
+                let result = db.query(
+                    &format!(
+                        "SELECT COALESCE(line_label,'???'), COALESCE(text_fr, text_en)                          FROM inagle_event_subtitles WHERE {filter}                          ORDER BY event_id, line_index LIMIT 1 OFFSET $1"
+                    ),
+                    &[SqlValue::Integer(offset % n)],
+                )?;
+                let row = result.rows.into_iter().next()?;
+                Some((mirror::text(&row.values[0]), mirror::text(&row.values[1])))
             });
         let Some((speaker, text)) = dialogue else {
             respond_text(
@@ -5828,13 +5810,20 @@ fn resolve_depot_racine() -> Result<PathBuf> {
 /// `racine` est la racine du jeu **effective** (`--game-dir` compris) : chercher les backups
 /// sous `resolve_game_dir()` ignorait l'argument et regardait sous l'installation Steam, où
 /// `data/backups` n'existe pas — le miroir passait alors pour absent.
-fn resolve_db(racine: &Path, db_override: Option<&Path>) -> Option<PathBuf> {
-    if let Some(p) = db_override {
-        if p.exists() {
-            return Some(p.to_path_buf());
+fn resolve_db(racine: &Path, db_override: Option<&str>) -> Option<Mirror> {
+    if let Some(value) = db_override {
+        let mirror = Mirror::parse(value);
+        if mirror.is_none() {
+            warn!("DB spécifiée introuvable : {value}");
         }
-        warn!("DB spécifiée introuvable : {}", p.display());
-        return None;
+        return mirror;
+    }
+
+    // Base PostgreSQL (Neon) : prioritaire sur les miroirs fichiers.
+    for var in &["NIE_PG_URL", "INAGLE_DATABASE_URL"] {
+        if let Some(mirror) = std::env::var(var).ok().and_then(|v| Mirror::parse(&v)) {
+            return Some(mirror);
+        }
     }
 
     // Variables d'environnement.
@@ -5842,7 +5831,7 @@ fn resolve_db(racine: &Path, db_override: Option<&Path>) -> Option<PathBuf> {
         if let Ok(v) = std::env::var(var) {
             let p = PathBuf::from(&v);
             if p.exists() {
-                return Some(p);
+                return Some(Mirror::Sqlite(p));
             }
         }
     }
@@ -5865,11 +5854,11 @@ fn resolve_db(racine: &Path, db_override: Option<&Path>) -> Option<PathBuf> {
             .collect();
         candidates.sort();
         if let Some(p) = candidates.last() {
-            return Some(p.clone());
+            return Some(Mirror::Sqlite(p.clone()));
         }
     }
 
-    warn!("aucun miroir SQLite trouvé — résolution uniforme désactivée");
+    warn!("aucun miroir inagle trouvé — résolution uniforme désactivée");
     None
 }
 
@@ -5982,7 +5971,7 @@ fn main() -> Result<()> {
     // Résout le miroir SQLite.
     let db_path = resolve_db(&racine, cli.db.as_deref());
     if let Some(ref p) = db_path {
-        info!("miroir SQLite : {}", p.display());
+        info!("miroir inagle : {}", p.describe());
     }
 
     // Accès au code du dépôt : monté UNIQUEMENT sur `--depot-code`. Un échec d'ouverture est
