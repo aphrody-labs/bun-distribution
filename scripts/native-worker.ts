@@ -22,6 +22,15 @@ async function main(): Promise<number> {
   )
     throw new Error("Invalid native build arguments.");
   const env = { ...Bun.env };
+  // Each admitted slot builds in its own Cargo target directory (slot 0 keeps the shared
+  // `target/`) with an equal share of the host's cores, so slots never wait on Cargo's
+  // directory lock or oversubscribe the CPU.
+  const slot = Number(Bun.env.APHRODY_NATIVE_SLOT ?? 0);
+  const slots = Math.max(1, Number(Bun.env.APHRODY_NATIVE_SLOTS ?? 3));
+  if (Number.isSafeInteger(slot) && slot > 0 && env.CARGO_TARGET_DIR)
+    env.CARGO_TARGET_DIR = `${env.CARGO_TARGET_DIR}${env.CARGO_TARGET_DIR.includes("\\") ? "\\" : "/"}slot-${slot}`;
+  if (env.CARGO_BUILD_JOBS === "auto")
+    env.CARGO_BUILD_JOBS = String(Math.max(1, Math.floor(navigator.hardwareConcurrency / slots)));
   for (const key of Object.keys(env)) {
     if (key.startsWith("APHRODY_NATIVE_")) delete env[key];
   }

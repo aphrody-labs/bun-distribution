@@ -815,7 +815,8 @@ export async function runNativeResult(
   const requestedEnv: Record<string, string | undefined> = {
     ...Bun.env,
     ...options.env,
-    CARGO_BUILD_JOBS: "1",
+    // The native worker splits the host's cores between the admitted build slots.
+    CARGO_BUILD_JOBS: options.env?.CARGO_BUILD_JOBS ?? "auto",
     CARGO_TARGET_DIR: join(root, "target"),
     CARGO_INSTALL_ROOT: join(root, "install"),
   };
