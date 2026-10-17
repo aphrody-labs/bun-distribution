@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-/** `re install-claude`: installs the RE plugin skills and the one `re` MCP server into Claude. */
+/** `re install`: installs the RE plugin skills and registers the `re` MCP server for the local agent. */
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
@@ -7,7 +7,7 @@ import { join, resolve } from "node:path";
 const packageRoot = resolve(import.meta.dir, "..");
 const root = resolve(packageRoot, "../..");
 
-/** Entry point for `re install-claude`. Returns the process exit code. */
+/** Entry point for `re install`. Returns the process exit code. */
 export async function main(_argv: string[]): Promise<number> {
   const skillsDir = join(homedir(), ".claude", "skills");
   const pluginSkills = join(packageRoot, "plugin", "skills");

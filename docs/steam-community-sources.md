@@ -25,10 +25,10 @@ so copyleft licenses stay confined to the checkout of the submodule itself.
 | `vendor/steam/steamachievementmanager`  | gibbed/SteamAchievementManager    | Zlib       | Reference achievements and stats schema handling                                  |
 | `vendor/steam/steamtools`               | BeyondDimension/SteamTools        | GPL-3.0    | Reference toolbox features; read for behavior only                                |
 | `vendor/steam/steam-mcp-server` | sharkusmanch/steam-mcp-server | MIT | Reference MCP server for the Steam Web API; tool surface cross-check for `mcp-server.ts` |
-| `vendor/steam/steam-claude-skills` | tugteam/steam-claude-skills | MIT | Upstream Steamworks and SteamCMD skills; `steamcmd` is installed by `install-claude.ts` |
-| `vendor/steam/steamos-claude-skill` | 28allday/steamos-claude-skill | MIT | Upstream SteamOS maintenance skill, installed by `install-claude.ts` |
+| `vendor/steam/steam-claude-skills` | tugteam/steam-claude-skills | MIT | Upstream Steamworks and SteamCMD skills; `steamcmd` is installed by `re install` |
+| `vendor/steam/steamos-claude-skill` | 28allday/steamos-claude-skill | MIT | Upstream SteamOS maintenance skill, installed by `re install` |
 | `vendor/re/ghidramcp` | LaurieWired/GhidraMCP | Apache-2.0 | Reference Ghidra MCP bridge for the RE pipeline |
-| `vendor/re/ida-pro-mcp` | mrexodia/ida-pro-mcp | MIT | Reference IDA MCP server; its `idapython` skill is installed by `install-claude.ts` |
+| `vendor/re/ida-pro-mcp` | mrexodia/ida-pro-mcp | MIT | Reference IDA MCP server; its `idapython` skill is installed by `re install` |
 
 ## Rules
 

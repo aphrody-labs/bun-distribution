@@ -11,7 +11,7 @@ const args = process.argv.slice(2);
 const bunOsCommands = {
   steam: "../src/steam/cli.ts",
   pipeline: "../src/pipeline/cli.ts",
-  "install-claude": "./install-claude.ts",
+  install: "./install.ts",
 };
 if (args[0] !== undefined && Object.hasOwn(bunOsCommands, args[0])) {
   const { main } = await import(bunOsCommands[args[0]]);
