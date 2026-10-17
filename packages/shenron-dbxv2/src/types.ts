@@ -84,7 +84,7 @@ export interface Dbxv2 {
   modelJson(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): ModelJson;
   /** The same model as binary glTF. */
   modelGlb(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): Uint8Array;
-  /** MP4 (H.264) or WebM (VP9) remux of a CRI USM. */
+  /** MP4 (H.264), WebM (VP9) or raw .m2v MPEG-2 stream (DBXV2 movies) of a CRI USM; sniff the magic. */
   usmToVideo(bytes: Uint8Array): Uint8Array;
   /** Validated TTF/OTF/WOFF bytes; Iggy bundles are refused. */
   fontToSfnt(bytes: Uint8Array): Uint8Array;

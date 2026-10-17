@@ -429,8 +429,8 @@ fn usm_error(error: FormatError) -> ReError {
     ReError::ParseError { context: "usm", details: error.to_string() }
 }
 
-/// Remux a CRI USM to a browser-playable container: MP4 for H.264, WebM for VP9. Returns the
-/// bytes and the extension.
+/// Remux a CRI USM: MP4 for H.264, WebM for VP9, raw `.m2v` elementary stream for MPEG-2 (what
+/// DBXV2 movies use). Returns the bytes and the extension.
 #[cfg(feature = "dbxv2")]
 pub fn usm_to_video(bytes: &[u8]) -> Result<(Vec<u8>, &'static str)> {
     use aphrody_nie_formats::usm;
@@ -439,9 +439,12 @@ pub fn usm_to_video(bytes: &[u8]) -> Result<(Vec<u8>, &'static str)> {
     match usm.codec {
         CodecVideo::H264 => usm.en_mp4().map(|(out, _)| (out, "mp4")).map_err(usm_error),
         CodecVideo::Vp9 => usm.en_webm().map(|(out, _)| (out, "webm")).map_err(usm_error),
+        // The game's own movies are Sofdec Prime: no MP4/WebM mapping exists, so the MPEG-2 video
+        // elementary stream is returned for an external player or transcoder.
+        CodecVideo::Mpeg2 => Ok((usm.flux_brut(), "m2v")),
         other => Err(ReError::ParseError {
             context: "usm",
-            details: format!("video codec `{}` cannot be remuxed (H.264 and VP9 only)", other.nom()),
+            details: format!("video codec `{}` cannot be extracted", other.nom()),
         }),
     }
 }
