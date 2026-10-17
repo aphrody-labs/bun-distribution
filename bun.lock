@@ -316,7 +316,7 @@
     },
     "apps/m3-web": {
       "name": "@aphrody/m3-web",
-      "version": "3.3.3",
+      "version": "1.4.4",
       "dependencies": {
         "@aphrody/m3": "workspace:*",
         "@aphrody/m3-front": "workspace:*",
@@ -569,7 +569,7 @@
     },
     "packages/ag-ui": {
       "name": "@aphrody/ag-ui",
-      "version": "1.0.1",
+      "version": "1.4.4",
       "dependencies": {
         "@ag-ui/a2ui-toolkit": "catalog:",
         "@ag-ui/client": "catalog:",
@@ -587,7 +587,7 @@
     },
     "packages/android-web": {
       "name": "@aphrody/android-web",
-      "version": "0.1.0",
+      "version": "1.4.4",
       "dependencies": {
         "@aphrody/bun-android": "workspace:*",
         "@aphrody/tauri": "workspace:*",
@@ -3552,7 +3552,7 @@
     },
     "packages/docs-sync": {
       "name": "@aphrody/docs-sync",
-      "version": "0.1.0",
+      "version": "1.4.4",
     },
     "packages/drive-client": {
       "name": "@aphrody/drive-client",
@@ -3688,7 +3688,7 @@
     },
     "packages/m3": {
       "name": "@aphrody/m3",
-      "version": "3.3.3",
+      "version": "1.4.4",
       "bin": {
         "m3": "./bin/m3.ts",
       },

@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3",
-  "version": "3.3.3",
+  "version": "1.4.4",
   "private": true,
   "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI.",
   "keywords": [

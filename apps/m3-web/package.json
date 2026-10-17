@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-web",
-  "version": "3.3.3",
+  "version": "1.4.4",
   "private": true,
   "description": "Showcase app of the M3 framework. Built, served and compiled through the yolo CLI (`yolo web build|dev`, `yolo tauri build`), which runs these scripts.",
   "type": "module",
