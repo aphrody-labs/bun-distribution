@@ -2,7 +2,9 @@
 // Bun Engine as non-Steam shortcuts: one "Bun Engine" entry (the frontend) and per-game entries
 // from the bep library that boot the native machine with `--steam` (overlay, Rich Presence,
 // Steam Input, Steam Cloud saves). `shortcuts.vdf` is binary KeyValues written through
-// @aphrody/bun-steam; artwork goes to `userdata/<account>/config/grid/`.
+// @aphrody/bun-steam. Artwork is real only (libretro-thumbnails matched through the
+// libretro-database title, Bun's logo for the Bun Engine entry) and goes to
+// `userdata/<account>/config/grid/`; slots without real art keep Steam's default.
 //
 // Safety: the file is only written while the Steam client is closed (`--close-steam` asks it to
 // exit with `steam -shutdown` and `--restart-steam` starts it again). The original is verified to
@@ -28,7 +30,7 @@ import { type Route, commandFor } from "../frontend/launch";
 import { type Game, gameById, gamesFor } from "../frontend/library";
 import { systemById } from "../frontend/systems";
 import { repoRoot } from "../usr";
-import * as art from "./art";
+import { type Artwork, bunEngineArt, libretroArt } from "./thumbnails";
 
 const TAG = "Bun Engine";
 const STEAMID64_BASE = 76561197960265728n;
@@ -131,8 +133,7 @@ interface Planned {
   startDir: string;
   launch: string;
   appId: number;
-  art: art.ArtSpec;
-  initials: string;
+  art: Artwork;
 }
 
 function entry(p: Planned, icon: string): BinKvObject {
@@ -187,25 +188,6 @@ function accountDir(steamRoot: string, user?: string): string {
   return dir;
 }
 
-function libretroName(value: string): string {
-  return value.replace(/[&*/:`<>?\\|"]/g, "_");
-}
-
-async function cover(
-  game: Game,
-  thumbnails?: string,
-): Promise<art.Canvas | undefined> {
-  if (!thumbnails || !game.dat) return undefined;
-  const playlist = basename(game.dat).replace(/\.dat$/i, "");
-  const title = libretroName(game.title ?? game.name);
-  for (const kind of ["Named_Boxarts", "Named_Titles", "Named_Snaps"]) {
-    const file = Bun.file(join(thumbnails, playlist, kind, `${title}.png`));
-    if (await file.exists())
-      return art.decode(new Uint8Array(await file.arrayBuffer()));
-  }
-  return undefined;
-}
-
 async function plan(options: Options): Promise<Planned[]> {
   if (!options.engine || !existsSync(options.engine))
     throw new Error(
@@ -222,8 +204,7 @@ async function plan(options: Options): Promise<Planned[]> {
       startDir: quote(repoRoot),
       launch: `${quote(cli)} frontend`,
       appId: shortcutAppId(exe, "Bun Engine"),
-      art: { title: "Bun Engine", subtitle: "Bun OS" },
-      initials: "BE",
+      art: bunEngineArt(),
     });
   }
   let games: Game[] = options.games.map(gameById);
@@ -258,13 +239,7 @@ async function plan(options: Options): Promise<Planned[]> {
       startDir: quote(dirname(options.engine)),
       launch: args.map((a) => (/[\s"]/.test(a) ? quote(a) : a)).join(" "),
       appId: shortcutAppId(exe, name),
-      art: {
-        // No-Intro tags ("(World)", "(Rev 1)") stay in the shortcut name, not on the art.
-        title: title.replace(/\s*\([^)]*\)/g, "").trim() || title,
-        subtitle: system.name,
-        cover: await cover(game, options.thumbnails),
-      },
-      initials: system.native.machine.toUpperCase(),
+      art: await libretroArt(game, options.thumbnails),
     });
   }
   return planned;
@@ -300,18 +275,23 @@ async function waitFor(condition: () => boolean, ms: number): Promise<boolean> {
   return condition();
 }
 
+/** Copies the real artwork that exists; Steam keeps its default for the rest. */
 async function writeArt(gridDir: string, p: Planned): Promise<string> {
   mkdirSync(gridDir, { recursive: true });
-  const files: [string, art.Canvas][] = [
-    [`${p.appId}p.png`, art.grid(p.art)],
-    [`${p.appId}.png`, art.wide(p.art)],
-    [`${p.appId}_hero.png`, art.hero(p.art)],
-    [`${p.appId}_logo.png`, art.logo(p.art)],
-    [`${p.appId}_icon.png`, art.icon(p.initials)],
+  const slots: [keyof Artwork, string][] = [
+    ["portrait", `${p.appId}p.png`],
+    ["wide", `${p.appId}.png`],
+    ["hero", `${p.appId}_hero.png`],
+    ["logo", `${p.appId}_logo.png`],
+    ["icon", `${p.appId}_icon.png`],
   ];
-  for (const [name, canvas] of files)
-    await Bun.write(join(gridDir, name), art.png(canvas));
-  return join(gridDir, `${p.appId}_icon.png`);
+  for (const [slot, name] of slots) {
+    const target = join(gridDir, name);
+    const source = p.art[slot];
+    if (source) await Bun.write(target, Bun.file(source));
+    else rmSync(target, { force: true });
+  }
+  return p.art.icon ? join(gridDir, `${p.appId}_icon.png`) : "";
 }
 
 function removeArt(gridDir: string, appId: number): void {
@@ -368,6 +348,7 @@ async function main(argv: string[]): Promise<number> {
       appId: p.appId,
       gameId: shortcutGameId(p.appId).toString(),
       launch: p.launch,
+      art: p.art,
     })),
   };
   if (options.dryRun) {

@@ -6,8 +6,9 @@ Owners:
 | --- | --- |
 | Steamworks SDK in the engine (feature `steam`) | `crates/bun-engine-core/src/steam/` |
 | Bevy plugin (`bun_engine::steam::SteamPlugin`) | `crates/bun-engine-core/src/steam/plugin.rs` |
+| Runtime glue (pause, pads, screenshots, Deck window) | `crates/bun-engine-core/src/runtime/steam.rs` |
 | Steam sign-in for web apps | `packages/bun-steam/src/signin.ts` (`@aphrody/bun-steam/signin`) |
-| Non-Steam shortcuts and artwork | `packages/bun-engine/src/steam/{shortcuts,art}.ts` |
+| Non-Steam shortcuts and real artwork | `packages/bun-engine/src/steam/{shortcuts,thumbnails}.ts` |
 | Steam client configuration, VDF, Proton, steamcmd | `packages/bun-steam` (see `STEAM-PLATFORM.md`) |
 
 Nothing here handles Steam credentials: the engine talks to the running Steam client through
@@ -50,17 +51,22 @@ Switching to a real AppID (Steamworks partner site):
 
 ### What the engine does under Steam
 
-`bun-engine run <system> <image> --steam` runs the machine in the shared window through
-`steam::scene::SteamScene`; Bevy hosts add `steam::SteamPlugin::new(RunOptions, system, rom)`.
+`bun-engine run <system> <image> --steam` builds the runtime's machine app and adds
+`steam::SteamPlugin::new(steam::RunOptions, system, rom)`; any Bevy host can add the same plugin
+(`SteamPlugin::bare` without a machine). The plugin only uses `crate::bevy::{app, ecs}`
+(bevy-steamworks 0.17 targets Bevy 0.19); with `render`, `runtime::steam::SteamRuntimePlugin`
+binds it to the runtime: `SteamPaused` -> `MachineStatus::paused`, `SteamKeys` ->
+`ExternalPads["steam"]`, screenshot requests -> `view::capture_rgb(MachineSlot, MachineScreen)`,
+`SteamLayout` -> the primary window.
 
 | Feature | Implementation |
 | --- | --- |
 | Init | `SteamAPI_Init` before the window and GPU device exist, so the overlay can hook the swap chain. `ENABLE_VK_LAYER_VALVE_steam_overlay_1=1` is set for Vulkan; D3D12 is hooked by `gameoverlayrenderer64`. |
-| Overlay-safe present | `GameOverlayActivated` pauses the machine (`Scene::pause`, `SteamPaused`) and drops input, while the window keeps presenting every frame so the overlay keeps drawing. Callbacks are pumped every frame (at least every 16 ms). |
-| Steam Input | Two action sets: `emulator` (A, B, X, Y, L, R, Start, Select, D-pad: one action per `machine::keys` bit) and `menu` (navigation, select, back) for the controller-first UI. `input::write_manifest` generates the Input Action Manifest, `game_actions_<appid>.vdf` (In-Game Actions) and one default configuration per controller family (Xbox One/360, PS4/PS5, Switch Pro, Steam Controller, Steam Deck, generic); the engine passes the manifest to `SetInputActionManifestFilePath`. Digital actions become XInput-layout pads in the shared input layer (slots 3..0, so they do not alias XInput slot 0). |
+| Overlay-safe present | `GameOverlayActivated` sets `SteamPaused` (machine paused, Steam Input cleared) while Bevy keeps presenting every frame, so the overlay keeps drawing. Callbacks are pumped in `First` every frame. |
+| Steam Input | Two action sets: `emulator` (A, B, X, Y, L, R, Start, Select, D-pad: one action per `machine::keys` bit) and `menu` (navigation, select, back) for the controller-first UI. `input::write_manifest` generates the Input Action Manifest, `game_actions_<appid>.vdf` (In-Game Actions) and one default configuration per controller family (Xbox One/360, PS4/PS5, Switch Pro, Steam Controller, Steam Deck, generic); the engine passes the manifest to `SetInputActionManifestFilePath`. With AppID 480 Steam keeps Spacewar's published manifest, so only the `menu_*` actions (which Spacewar also defines) resolve and they drive the machine (D-pad, A, B); the full `emulator` set needs our own AppID (or, for local development only, the generated `game_actions_<appid>.vdf` in Steam's `controller_config/`). Digital actions become `SteamPads` (XInput layout), `SteamKeys` (machine bits, OR-ed into `EngineInput` through `ExternalPads["steam"]`) and `SteamKeyEvent` messages. |
 | Rich Presence | `system`, `game` and `status` ("Playing <game> on <SYSTEM>"); `steam_display = #Status_Playing` for real AppIDs. Cleared on exit. |
-| Screenshots | `HookScreenshots(true)`: F12 (or `TriggerScreenshot`) asks the engine, which writes the machine's own picture (`Scene::capture`, RGB) through `WriteScreenshot` and tags it with `SetLocation` ("<game> (<SYSTEM>)"). |
-| Steam Cloud | `ISteamRemoteStorage`. Saves live in `%LOCALAPPDATA%\Aphrody\bun-engine\saves\<rom-sha256>\` (`$XDG_DATA_HOME/aphrody/...` on Linux, `BUN_ENGINE_SAVES` overrides). The cloud mirrors them as `bun-engine/<rom-sha256>/<file>` with `bun-engine/manifest.json` (per ROM: title, system; per file: SHA-256, size, mtime, upload time). Equal hashes do nothing; otherwise the newer mtime wins. Every upload is read back and hash-checked; every write checks the 100 MiB file limit and the remaining quota. Sync runs before the machine boots and after the window closes. |
+| Screenshots | `HookScreenshots(true)`: F12 (or `TriggerScreenshot`) sets `SteamScreenshotPending`; the host fills `SteamFrame` with the machine's own picture (RGB) in `SteamSystems::Capture`, and the plugin writes it through `WriteScreenshot` and tags it with `SetLocation` ("<game> (<SYSTEM>)"). |
+| Steam Cloud | `ISteamRemoteStorage`. Saves live in `%LOCALAPPDATA%\Aphrody\bun-engine\saves\<rom-sha256>\` (`$XDG_DATA_HOME/aphrody/...` on Linux, `BUN_ENGINE_SAVES` overrides). The cloud mirrors them as `bun-engine/<rom-sha256>/<file>` with `bun-engine/manifest.json` (per ROM: title, system; per file: SHA-256, size, mtime, upload time). Equal hashes do nothing; otherwise the newer mtime wins. Every upload is read back and hash-checked; every write checks the 100 MiB file limit and the remaining quota. Sync runs before the machine boots and on `AppExit`; Bevy hosts can queue more work in `SteamCloudSync` (background thread, `SteamCloudSynced` messages). |
 | Achievements/stats | Stub: `stats::achievements` lists what Steam declares for the AppID. Nothing is unlocked. |
 
 ### Commands
@@ -69,7 +75,7 @@ Switching to a real AppID (Steamworks partner site):
 | --- | --- |
 | `bun-engine steam status [--appid N]` | Init and report SteamID, login, overlay, Deck/Big Picture/gamescope, cloud quota. |
 | `bun-engine steam presence <system> <game> [--hold S]` | Set Rich Presence and read it back from Steam. |
-| `bun-engine steam cloud quota\|list\|roundtrip [--bytes N]` | Quota, files, write/read/hash/delete round trip. |
+| `bun-engine steam cloud quota\|list\|roundtrip [--bytes N]` / `delete <file>...` | Quota, files, write/read/hash/delete round trip, delete cloud files. |
 | `bun-engine steam cloud sync\|push\|pull <rom> [--system S] [--title T] [--dir D]` | Reconcile one ROM's saves. |
 | `bun-engine steam input-manifest [--out DIR]` | Write the Steam Input manifest and configurations (no Steam needed). |
 | `bun-engine steam input [--seconds S]` | Load the manifest, report handles and controllers, print held keys. |
@@ -87,11 +93,14 @@ Switching to a real AppID (Steamworks partner site):
   `--favorites`) that run the native machine with `--steam --steam-title <title>` (BIOS arguments
   come from the frontend's own route resolution);
 - tag `Bun Engine` on every entry; re-running replaces our entries and keeps everything else;
-- artwork in `userdata/<account>/config/grid/`: portrait `<id>p.png` 600x900, wide `<id>.png`
-  920x430, hero `<id>_hero.png` 1920x620, logo `<id>_logo.png`, icon `<id>_icon.png`. It is drawn
-  from the engine's own look (the bun mark, pixel font) or composed around a libretro thumbnail
-  (`Named_Boxarts`, then `Named_Titles`, `Named_Snaps`) from a local libretro-thumbnails tree given
-  with `--thumbnails DIR`.
+- real artwork only, copied unmodified into `userdata/<account>/config/grid/`: portrait
+  `<id>p.png` = libretro `Named_Boxarts`, wide `<id>.png` = `Named_Titles`, hero `<id>_hero.png` =
+  `Named_Snaps`, logo `<id>_logo.png` = `Named_Logos`, matched to the game's libretro-database
+  title (exact name, else the same base title ranked by shared No-Intro tags). Thumbnails come from
+  `thumbnails.libretro.com` (cached in `usr/var/cache/bep/thumbnails`) or a local
+  libretro-thumbnails tree (`--thumbnails DIR`). The Bun Engine entry uses Bun's own logo
+  (`toolchains/bun/assets/logo-square.png` icon, `logo@4x.png` logo). Nothing is generated: a slot
+  without real art keeps Steam's default.
 
 Shortcut ids follow Steam: `crc32(quoted exe + name) | 0x80000000`; `steam://rungameid/` takes
 `(id << 32) | 0x02000000`.

@@ -20,7 +20,10 @@
 
 use std::{
     path::PathBuf,
-    sync::mpsc::{Receiver, channel},
+    sync::{
+        Mutex,
+        mpsc::{Receiver, channel},
+    },
     time::{Duration, Instant},
 };
 
@@ -42,18 +45,28 @@ pub struct SteamPlugin {
     pub rom: Option<PathBuf>,
     /// Directory for the generated Steam Input manifest.
     pub input_dir: PathBuf,
+    /// Started in the constructor: create the plugin before `DefaultPlugins` so `SteamAPI_Init`
+    /// precedes the GPU device and the overlay hooks the swap chain (and sees the Vulkan layer
+    /// variable before the instance exists).
+    steam: Mutex<Option<Result<Steam, String>>>,
 }
 
 impl SteamPlugin {
     /// The machine host's plugin: `system` (`nes`, `gba`, ...) and the ROM whose saves sync.
     pub fn new(options: RunOptions, system: impl Into<String>, rom: impl Into<PathBuf>) -> Self {
-        Self { options, system: system.into(), rom: Some(rom.into()), input_dir: super::input::default_dir() }
+        let steam = Mutex::new(Some(Steam::init(&steam_options(&options))));
+        Self { options, system: system.into(), rom: Some(rom.into()), input_dir: super::input::default_dir(), steam }
     }
 
     /// Steam without a machine (frontends, the stream client): no cloud saves, no presence.
     pub fn bare(options: RunOptions) -> Self {
-        Self { options, system: String::new(), rom: None, input_dir: super::input::default_dir() }
+        let steam = Mutex::new(Some(Steam::init(&steam_options(&options))));
+        Self { options, system: String::new(), rom: None, input_dir: super::input::default_dir(), steam }
     }
+}
+
+fn steam_options(options: &RunOptions) -> SteamOptions {
+    options.app_id.map_or_else(SteamOptions::default, SteamOptions::with_app_id)
 }
 
 /// Machine key bits (`crate::machine::keys`) held on Steam Input controllers.
@@ -162,8 +175,8 @@ impl Plugin for SteamPlugin {
             .add_message::<SteamKeyEvent>()
             .add_message::<SteamOverlay>()
             .add_message::<SteamCloudSynced>();
-        let options = self.options.app_id.map_or_else(SteamOptions::default, SteamOptions::with_app_id);
-        let steam = match Steam::init(&options) {
+        let started = self.steam.lock().ok().and_then(|mut slot| slot.take());
+        let steam = match started.unwrap_or_else(|| Steam::init(&steam_options(&self.options))) {
             Ok(steam) => steam,
             Err(e) => {
                 app.insert_resource(SteamLayout { controller_first: super::gamescope(), size: DECK_SIZE });

@@ -413,8 +413,14 @@ impl SteamInput {
             self.resolve();
         }
         let controllers = self.controllers();
-        let (set, actions) =
-            if self.menu_active { (self.sets[1], &self.menu) } else { (self.sets[0], &self.emulator) };
+        // With AppID 480 Steam keeps Spacewar's published manifest: only its `menu_*` actions
+        // resolve, so the menu actions drive the machine until our own AppID ships the manifest.
+        let emulator_ready = self.emulator.iter().any(|(h, _)| *h != 0);
+        let (set, actions) = if self.menu_active || !emulator_ready {
+            (self.sets[1], &self.menu)
+        } else {
+            (self.sets[0], &self.emulator)
+        };
         for slot in 0..4u8 {
             let pad = controllers.get(usize::from(slot)).map(|&handle| {
                 if set != 0 {
@@ -441,7 +447,8 @@ impl SteamInput {
 
     /// Key bits currently held across controllers (for headless consumers).
     pub fn keys(&self) -> u32 {
-        let actions = if self.menu_active { &MENU_ACTIONS[..] } else { &EMULATOR_ACTIONS[..] };
+        let emulator_ready = self.emulator.iter().any(|(h, _)| *h != 0);
+        let actions = if self.menu_active || !emulator_ready { &MENU_ACTIONS[..] } else { &EMULATOR_ACTIONS[..] };
         self.last.iter().flatten().fold(0, |acc, pad| {
             actions.iter().filter(|a| pad.buttons & a.pad != 0).fold(acc, |acc, a| acc | a.key)
         })

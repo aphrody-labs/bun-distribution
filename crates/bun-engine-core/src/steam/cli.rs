@@ -11,6 +11,7 @@ use super::{Presence, Steam, SteamOptions, cloud, input, stats};
 pub const USAGE: &str = "usage: bun-engine steam status [--appid N]
        bun-engine steam presence <system> <game> [--appid N] [--hold SECS]
        bun-engine steam cloud quota|list|roundtrip [--bytes N] [--appid N]
+       bun-engine steam cloud delete <cloud-file>... [--appid N]
        bun-engine steam cloud sync|push|pull <rom> [--system S] [--title T] [--dir DIR] [--appid N]
        bun-engine steam input-manifest [--out DIR] [--appid N]
        bun-engine steam input [--appid N] [--seconds S]
@@ -144,6 +145,14 @@ fn cloud_command(args: &Args) -> Result<(), String> {
             }));
         }
         "list" => print(&cloud::list()),
+        "delete" => {
+            let names = &args.positional[1..];
+            if names.is_empty() {
+                return Err(USAGE.into());
+            }
+            let deleted: Vec<_> = names.iter().map(|n| (n, cloud::delete(n))).collect();
+            print(&deleted);
+        }
         "roundtrip" => {
             let bytes = args.number::<usize>("bytes")?.unwrap_or(256 * 1024);
             let (written, read) = cloud::roundtrip(bytes)?;

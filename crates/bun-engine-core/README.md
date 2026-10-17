@@ -33,7 +33,7 @@ with `crates/re`, rea and Replica.
 | `bun-engine stream --loopback` | Self-test without a server: synthetic pattern -> Media Foundation H.264 -> same RTP/FEC path over 127.0.0.1 -> decode -> FSR1 -> present, with a latency report |
 | `bun-engine run <system> <image> --steam [--steam-appid N]` | Feature `steam`: run under Steam (AppID 480 by default): overlay with pause, Steam Input action sets, Rich Presence, screenshot hook, Steam Cloud saves keyed by ROM SHA-256 |
 | `bun-engine steam status\|presence\|cloud\|input\|input-manifest\|stats` | Feature `steam`: client state, Rich Presence read-back, Remote Storage quota/list/round trip/sync, Steam Input manifest and handles, achievements stub |
-| `bun-engine steam install-shortcut\|uninstall-shortcut` | Bun Engine and bep library games as non-Steam shortcuts with generated grid/hero/logo/icon art (Steam closed; backup, atomic write, verify) |
+| `bun-engine steam install-shortcut\|uninstall-shortcut` | Bun Engine and bep library games as non-Steam shortcuts with real art only (libretro-thumbnails matched through libretro-database, Bun logo), written while Steam is closed (backup, atomic write, verify) |
 
 ## Machines
 
