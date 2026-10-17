@@ -1369,6 +1369,29 @@ name = "aphrody-ctr"
 version = "0.1.1"
 
 [[package]]
+name = "aphrody-ctr-desktop"
+version = "1.4.4"
+dependencies = [
+ "aphrody-ctr-emu",
+ "console_error_panic_hook",
+ "cpal 0.16.0",
+ "pollster 1.0.1",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "wgpu 30.0.1",
+ "winit 0.30.13",
+]
+
+[[package]]
+name = "aphrody-ctr-emu"
+version = "1.4.4"
+dependencies = [
+ "zakuro-common",
+ "zakuro-core",
+]
+
+[[package]]
 name = "aphrody-diagnostics"
 version = "1.4.4"
 dependencies = [
@@ -2758,12 +2781,14 @@ dependencies = [
  "aphrody-nie-data",
  "aphrody-nie-explore",
  "aphrody-nie-formats",
+ "aphrody-nie-sql",
  "clap",
  "image_dds",
  "rusqlite",
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tokio",
  "tracing",
  "tracing-subscriber",
 ]
@@ -8499,6 +8524,7 @@ version = "0.1.0"
 dependencies = [
  "aes 0.8.4",
  "aes-gcm 0.10.3",
+ "aphrody-ctr-emu",
  "aphrody-dust-core",
  "aphrody-dust-soft-2d",
  "aphrody-dust-soft-3d",
@@ -8532,8 +8558,6 @@ dependencies = [
  "web-sys",
  "wgpu 30.0.1",
  "windows 0.62.2",
- "zakuro-common",
- "zakuro-core",
 ]
 
 [[package]]
@@ -8577,7 +8601,7 @@ dependencies = [
 
 [[package]]
 name = "bun-python-host"
-version = "1.4.4"
+version = "0.1.0"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
@@ -23072,6 +23096,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
 dependencies = [
  "cfg-if 1.0.5",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -33960,6 +33987,7 @@ name = "rustboyadvance-utils"
 version = "0.1.0"
 dependencies = [
  "goblin 0.10.7",
+ "instant",
  "log",
  "ringbuf",
 ]
