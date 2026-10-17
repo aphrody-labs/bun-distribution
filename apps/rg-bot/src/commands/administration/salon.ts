@@ -115,7 +115,7 @@ import {
 import { rgEmbed, truncate } from "../../lib/embeds";
 import { lireFiltreNotification } from "../../services/tweets";
 import { borner, echapperMarkdown, horodatageRelatif } from "../staff/format";
-import { differerEnPrive, exigerDroits, messagePanne, type RgAdmin } from "../staff/garde";
+import { differerEnPrive, exigerDroits, messagePanne } from "../staff/garde";
 import { analyserIdConfirmation, construireIdConfirmation, decrireChangement, urlIllustrationAbsolue } from "./valeurs";
 import "./racine-moderation";
 import { echec, repondre } from "../../lib/ui";

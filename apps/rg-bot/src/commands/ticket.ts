@@ -46,7 +46,6 @@ import {
   motifPropre,
   referenceTicket,
   refusTransition,
-  sujetPropre,
   transitionPermise,
   verifierOuverture,
 } from "../lib/tickets";

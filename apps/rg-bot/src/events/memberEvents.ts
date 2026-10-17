@@ -26,14 +26,14 @@ export class MemberEvents {
   }
 
   @On({ event: "guildMemberUpdate" })
-  async onUpdate([_, after]: ArgsOf<"guildMemberUpdate">) {
+  async onUpdate([, after]: ArgsOf<"guildMemberUpdate">) {
     if (!BOT_SYNC_MEMBRES) return;
     if (after.guild.id !== GUILD_ID) return;
     await syncOneMember(after).catch(err => console.error("[guildMemberUpdate] échec :", err));
   }
 
   @On({ event: "userUpdate" })
-  async onUserUpdate([_, after]: ArgsOf<"userUpdate">, client: Client) {
+  async onUserUpdate([, after]: ArgsOf<"userUpdate">, client: Client) {
     if (!BOT_SYNC_MEMBRES) return;
     if (!GUILD_ID) return;
     const guild = client.guilds.cache.get(GUILD_ID);

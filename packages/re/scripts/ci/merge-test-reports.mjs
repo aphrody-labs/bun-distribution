@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 const [directory = ".bun-test-reports", xmlOutput = "test-results.xml"] =
   process.argv.slice(2);
 const attribute = (tag, name) =>
-  new RegExp(`\s${name}="([^"]*)"`, "u").exec(tag)?.[1];
+  new RegExp(`\\s${name}="([^"]*)"`, "u").exec(tag)?.[1];
 
 const files = new Map();
 const suites = [];

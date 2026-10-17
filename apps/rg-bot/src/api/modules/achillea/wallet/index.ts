@@ -12,7 +12,7 @@ export const walletController = new Elysia({ prefix: "/wallet" })
   .use(dbPlugin)
   .get(
     "/me",
-    async ({ db, headers, set }) => {
+    async ({ db, headers }) => {
       const session = await sessionOrUnauthorized(headers);
       if (!session) return status(401, { message: "Authentication required" as const });
       const wallet = await WalletService.getOrCreate(db, session.id);

@@ -24,10 +24,8 @@ import { authFromAuthorization, authFromCookieHeader, type SessionUser } from ".
 import {
   activateSeasonAdmin,
   createSeasonAdmin,
-  findTier,
   getActiveSeason,
   getOrCreateElo,
-  getRanks,
   getUserRow,
   listSeasonsAdmin,
   resetLadderForSeason,
@@ -181,16 +179,6 @@ async function resolvePlayer(
     avatar: userRow?.avatar ?? "",
     elo: elo.elo,
   };
-}
-
-// URL d'avatar Discord (mêmes règles que /api/users/me + l'ancienne vue leaderboard_view) :
-// avatar absolu tel quel, sinon CDN /avatars/<id>/<hash>.png, sinon embed par défaut (id >> 22 % 6).
-function discordAvatar(userId: string, avatar: string | null): string {
-  if (!avatar) {
-    return `https://cdn.discordapp.com/embed/avatars/${(BigInt(userId) >> 22n) % 6n}.png`;
-  }
-  if (avatar.startsWith("http")) return avatar;
-  return `https://cdn.discordapp.com/avatars/${userId}/${avatar}.png`;
 }
 
 type AuthorizeResult = { ok: true; actorId: string | null } | { ok: false; status: number; error: string };

@@ -406,7 +406,6 @@ describe("sondage — état", () => {
 
 describe("sondage — résultats", () => {
   const officiel = normaliserSondage(LIGNE_OFFICIELLE, ORIGINE);
-  const estime = normaliserSondage(LIGNE_ESTIMEE, ORIGINE);
 
   test("aDesResultats distingue un sondage chiffré d'un sondage muet", () => {
     expect(aDesResultats(officiel)).toBe(true);

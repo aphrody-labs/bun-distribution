@@ -243,7 +243,7 @@ export async function tournamentSummary(db: Kysely<Database>, tournamentId: numb
     ? (() => {
         const goals = matches.reduce((n, m) => n + m.score1 + m.score2, 0);
         const margins = matches.map(m => Math.abs(m.score1 - m.score2));
-        const matchup = (m: RawMatch | undefined, max = false) => {
+        const matchup = (m: RawMatch | undefined, _max = false) => {
           if (!m) return null;
           const a =
             m.score1 >= m.score2

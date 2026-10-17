@@ -62,7 +62,6 @@ import {
   libelleNiveauVerification,
   libelleTypeSalon,
   manquantesParmi,
-  MAX_LIGNES_PAGE_INSPECTION,
   nombreDePagesInspection,
   PERMISSIONS_LECTURE_INVITATIONS,
   permissionsManquantes,

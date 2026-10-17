@@ -117,7 +117,7 @@ export const clanController = new Elysia({ prefix: "/clans" })
   )
   .patch(
     "/:id",
-    async ({ db, headers, params, body, set }) => {
+    async ({ db, headers, params, body }) => {
       const session = await resolveAchilleaSession(headers);
       if (!session) return status(401, { message: "Authentication required" as const });
       const result = await ClanService.update(db, params.id, session.id, body);

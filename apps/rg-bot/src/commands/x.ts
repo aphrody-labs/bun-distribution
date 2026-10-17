@@ -19,10 +19,7 @@
  */
 import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
-  ActionRowBuilder,
   ApplicationCommandOptionType,
-  ButtonBuilder,
-  ButtonStyle,
   EmbedBuilder,
   MessageFlags,
   type AutocompleteInteraction,

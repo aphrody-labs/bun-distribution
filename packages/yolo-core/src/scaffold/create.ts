@@ -11,7 +11,7 @@
  */
 import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { checkoutRoot } from "@aphrody/paths";
 
 export interface StackTemplate {

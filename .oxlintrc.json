@@ -18,6 +18,8 @@
     "packages/bun-windows-chakra/index.d.ts",
     "packages/bun-windows-webservices/index.d.ts",
     "packages/canvas/vendor/**",
+    "packages/re/**",
+    "apps/pdfcraft/vendor/**",
     "packages/menu-render-webgpu/src/wasm/nie_wasm_bg.js",
     "packages/nie-web/src/nie-wasm-web/nie_wasm.js"
   ]

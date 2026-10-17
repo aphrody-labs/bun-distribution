@@ -30,7 +30,6 @@ import { DON, etatQuotidien, jourCivil, verifierDepense, type Motif } from "../l
 import {
   garantieAuTirage,
   prixDePlaque,
-  rareteDe,
   remboursementDoublon,
   TARIFS,
   type Categorie,
@@ -728,7 +727,6 @@ export async function tirage(
   if (!personnage) {
     return null;
   }
-  const rarete = rareteDe(personnage.rarete);
 
   return await sql.begin(async tx => {
     const [debit] = await tx<Array<{ jetons: number }>>`

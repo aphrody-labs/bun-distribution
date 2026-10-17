@@ -96,7 +96,7 @@ export abstract class TournamentService {
     const bracketData = await tournamentBracketData(id);
     return [
       tournament,
-      participants.map((participant, index) => ({
+      participants.map(participant => ({
         id: participant.id,
         tournament: tournament,
         user: {

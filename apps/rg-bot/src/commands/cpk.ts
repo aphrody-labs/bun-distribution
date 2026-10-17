@@ -41,7 +41,6 @@ import {
   type AutocompleteInteraction,
   ButtonBuilder,
   type ButtonInteraction,
-  ButtonStyle,
   type ChatInputCommandInteraction,
   type EmbedBuilder,
   type InteractionEditReplyOptions,

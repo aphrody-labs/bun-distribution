@@ -164,7 +164,7 @@ export const authController = new Elysia({ prefix: "/auth" })
   )
   .get(
     "/oauth/:provider/start",
-    async ({ db, params, query, headers, set }) => {
+    async ({ db, params, query, headers }) => {
       const provider = params.provider;
       if (provider !== "twitch" && provider !== "challonge") {
         return status(400, { message: "Unsupported OAuth provider" as const });
