@@ -14,8 +14,14 @@ RUN mkdir /rootfs && tar -xzf /base.tar.gz -C /rootfs
 FROM scratch AS base
 COPY --from=fetch /rootfs/ /
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip systemd systemd-sysv dbus sudo \
-  && rm -rf /var/lib/apt/lists/*
+# Runtime image: no docs, man pages or translations (copyright notices stay); no apt archive cache.
+RUN printf '%s\n' 'path-exclude=/usr/share/doc/*' 'path-include=/usr/share/doc/*/copyright' 'path-exclude=/usr/share/man/*' \
+       'path-exclude=/usr/share/info/*' 'path-exclude=/usr/share/gtk-doc/*' 'path-exclude=/usr/share/help/*' \
+       'path-exclude=/usr/share/locale/*' 'path-include=/usr/share/locale/locale.alias' 'path-include=/usr/share/locale/en*' \
+       'path-exclude=/usr/share/lintian/*' >/etc/dpkg/dpkg.cfg.d/01-bun-os-nodoc \
+  && printf 'Acquire::Languages "none";\nAPT::Keep-Downloaded-Packages "false";\n' >/etc/apt/apt.conf.d/01-bun-os \
+  && apt-get update && apt-get install -y --no-install-recommends ca-certificates curl systemd systemd-sysv dbus sudo \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /var/log/apt/* /var/log/dpkg.log
 
 FROM base AS bun
 ARG BUN_URL
@@ -50,7 +56,8 @@ RUN set -e; ln -s bun /usr/local/bin/bunx; apt-get update \
        if apt-cache show "$p" >/dev/null 2>&1; then echo "$p" >>/tmp/cosmic; else missing="$missing $p"; fi; done \
   && if [ -s /tmp/cosmic ]; then apt-get install -y --no-install-recommends $(cat /tmp/cosmic); fi \
   && install -d /usr/share/bun-os && printf '%s\n' $missing >/usr/share/bun-os/missing-packages.txt \
-  && rm -rf /var/lib/apt/lists/* /tmp/cosmic
+  && apt-get purge -y --auto-remove gnupg \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /var/log/apt/* /var/log/dpkg.log /tmp/cosmic
 COPY os-release.fragment /usr/share/bun-os/os-release.fragment
 CMD ["/bin/bash"]
 
@@ -64,5 +71,5 @@ ADD --checksum=sha256:${KERNEL_IMAGE_SHA256} ${KERNEL_BASE_URL}/${KERNEL_IMAGE_D
 ADD --checksum=sha256:${KERNEL_MODULES_SHA256} ${KERNEL_BASE_URL}/${KERNEL_MODULES_DEB} /tmp/kernel/
 RUN apt-get update && apt-get install -y --no-install-recommends initramfs-tools kmod linux-firmware systemd-boot-efi \
   && apt-get install -y /tmp/kernel/*.deb \
-  && rm -rf /var/lib/apt/lists/* /tmp/kernel \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /var/log/apt/* /var/log/dpkg.log /tmp/kernel \
   && systemctl enable gdm3 || true

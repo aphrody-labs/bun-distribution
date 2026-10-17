@@ -25,13 +25,17 @@ RUN cd /tmp && unzip -q bun.zip && install -m755 bun-linux-*/bun /usr/local/bin/
 FROM bun AS edge-build
 WORKDIR /src
 COPY app/ ./
-RUN bun build --compile --minify --target=bun edge.ts --outfile /out/bunos-edge
+RUN bun build --compile --minify --sourcemap=none --target=bun edge.ts --outfile /out/bunos-edge
 
 # Hardened final layer: no package manager, non-root, read-only friendly.
-FROM base AS hardened
-RUN rm -rf /sbin/apk /etc/apk /lib/apk /usr/share/apk /var/cache/apk \
+FROM base AS root
+RUN rm -rf /sbin/apk /etc/apk /lib/apk /usr/share/apk /var/cache/apk /usr/share/man /usr/share/doc \
   && install -d -o 10001 -g 10001 -m 0750 /app /var/cache/bunos
-ENV NODE_ENV=production PORT=8080
+
+# Squash into one layer: removing files in a later layer would not shrink the image.
+FROM scratch AS hardened
+COPY --from=root / /
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin NODE_ENV=production PORT=8080
 EXPOSE 8080
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["/sbin/tini", "--"]
