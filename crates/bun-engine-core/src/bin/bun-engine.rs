@@ -6,7 +6,7 @@ use bun_engine::cartridge::dust::rom::raw;
 use bun_engine::machine::{Machine, Step, arm::ArmFirmware, nds::Nds};
 use serde_json::json;
 
-const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine run <nds|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS]";
+const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS]";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1).peekable();
@@ -70,6 +70,16 @@ fn main() -> ExitCode {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
+        #[cfg(feature = "ctr")]
+        "3ds" => match bun_engine::machine::ctr::Ctr::from_path(std::path::Path::new(&path), &rom) {
+            Ok(m) => Box::new(m),
+            Err(e) => return fail(e),
+        },
+        #[cfg(feature = "switch")]
+        "switch" => match bun_engine::machine::switch::Switch::from_path(&path) {
+            Ok(m) => Box::new(m),
+            Err(e) => return fail(e),
+        },
         "gc" => match bun_engine::machine::wii::WiiMachine::gamecube_dol(&rom) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
@@ -113,17 +123,10 @@ fn main() -> ExitCode {
     if let Some(why) = machine.diagnostic() {
         eprintln!("stopped: {why}");
     }
-    if let Some(dir) = out {
-        if let Err(e) = fs::create_dir_all(&dir) {
-            return fail(format!("{}: {e}", dir.display()));
-        }
-        for (i, s) in machine.screens().iter().enumerate() {
-            let mut ppm = format!("P6\n{} {}\n255\n", s.width, s.height).into_bytes();
-            ppm.extend_from_slice(&s.rgb);
-            if let Err(e) = fs::write(dir.join(format!("screen{i}.ppm")), ppm) {
-                return fail(e.to_string());
-            }
-        }
+    if let Some(dir) = out
+        && let Err(e) = bun_engine::machine::write_screens(&dir, &machine.screens())
+    {
+        return fail(format!("{}: {e}", dir.display()));
     }
     ExitCode::SUCCESS
 }

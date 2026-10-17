@@ -7,10 +7,12 @@ rust-version = "1.97"
 authors = ["aphrody-code"]
 license = "Apache-2.0"
 repository = "https://github.com/aphrody-labs/aphrody"
-description = "Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark)"
+description = "Bun OS build of the YOLO runtime ABI owned by the Bun fork, with the browser and GPU providers"
 
 [lib]
 name = "yolo_runtime"
+# One copy of the runtime and ABI: the pinned Bun fork. This crate adds the browser and GPU providers (ext/).
+path = "../../toolchains/bun/packages/bun-runtime-sdk/crates/yolo-runtime/src/lib.rs"
 # The dynamic library is the single `aphrody_ffi` cdylib, which re-exports the yolo_* ABI.
 crate-type = ["rlib"]
 

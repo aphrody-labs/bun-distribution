@@ -4,6 +4,7 @@ import { getReactionCounts } from "@/app/actions/reactions";
 import { getContinueReading } from "@/app/actions/reading-history";
 import { getPgPool } from "@/lib/db/pg";
 import { sanitizeNewsSearchQuery } from "@/lib/news-search";
+import { absoluteUrl } from "@/lib/site-url";
 import { parseSearchParams } from "@/lib/validations";
 import { NewsFeedClient } from "../news-client";
 import type { FeedItem } from "../news-client";
@@ -34,20 +35,12 @@ export default async function NewsFeedPage({
   const searchQuery = sanitizeNewsSearchQuery(rawQuery);
 
   /**
-   * FIL UNIFIÉ — `/news` porte les deux corpus.
-   *
-   * Le site tenait deux journaux : `/news` (articles Azalée, `app = 'azalee'`)
-   * et `/chroniques` (articles de l'association, `app = 'website'`). Deux
-   * listes, deux pages d'article, deux entrées de menu, deux mises en page —
-   * pour trois articles publiés en tout. Le lecteur devait deviner lequel des
-   * deux portait ce qu'il cherchait.
-   *
-   * `?format=` reste un FILTRE, pas une seconde page : `chronique` ne montre
-   * que les articles de l'association, `actu` que ceux d'Azalée, et l'absence
-   * de paramètre montre tout — c'est la vue par défaut.
+   * `/news` est le journal d'Azalée : ses articles (`app = 'azalee'`) et les
+   * posts X du compte @Azalee_IE. Les Chroniques du Bouquet de l'association
+   * (`app = 'website'`) ont leur propre fil sous `/chroniques`, et les posts X
+   * de Rose Griffon le leur sous `/posts-x`.
    */
-  const format = searchParamsValue.format as string | undefined;
-  const appsDuFil = format === "chronique" ? ["website"] : format === "actu" ? ["azalee"] : ["azalee", "website"];
+  const appsDuFil = ["azalee"];
 
   let featuredArticles: FeedItem[] = [];
   const featuredIds = new Set<string>();
@@ -230,7 +223,7 @@ export default async function NewsFeedPage({
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     description: "Actualités, traductions exclusives, interviews et analyses sur Inazuma Eleven: Victory Road.",
-    isPartOf: { "@type": "WebSite", name: "Azalée", url: "https://azalee.rosegriffon.fr" },
+    isPartOf: { "@type": "WebSite", name: "Azalée", url: absoluteUrl("/wiki") },
     mainEntity: {
       "@type": "ItemList",
       itemListElement: feedItems.slice(0, 10).map((item, i) => ({
@@ -238,15 +231,15 @@ export default async function NewsFeedPage({
         position: i + 1,
         url:
           item.type === "article"
-            ? `https://azalee.rosegriffon.fr/news/${item.slug}`
-            : `https://azalee.rosegriffon.fr/news/tweet/${item.id}`,
+            ? absoluteUrl(`/news/${item.slug}`)
+            : absoluteUrl(`/news/tweet/${item.id}`),
         name: item.title || "Actualité",
       })),
       numberOfItems: totalItems,
     },
     name: "Actualités Inazuma Eleven: Victory Road - Azalée",
     numberOfItems: totalItems,
-    url: "https://azalee.rosegriffon.fr/news",
+    url: absoluteUrl("/news"),
   };
 
   return (

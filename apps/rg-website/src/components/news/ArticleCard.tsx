@@ -29,14 +29,16 @@ interface ArticleCardProps {
   item: FeedItem;
   reactionData?: { count: number; userReacted: boolean };
   commentCount?: number;
+  /** Fil auquel appartient l'article : `/news` (Azalée) ou `/chroniques` (association). */
+  basePath?: "/news" | "/chroniques";
 }
 
-export function ArticleCard({ item, reactionData, commentCount }: ArticleCardProps) {
+export function ArticleCard({ item, reactionData, commentCount, basePath = "/news" }: ArticleCardProps) {
   const date = new Date(item.date);
   const categoryLabel = CATEGORY_LABELS[item.category] || item.category;
   const categoryTone = CATEGORY_TONE[item.category] || "bg-primary/10 text-primary";
   const [imgError, setImgError] = useState(false);
-  const href = `/news/${item.slug}`;
+  const href = `${basePath}/${item.slug}`;
 
   const card = (
     <Link href={href} className="group block">

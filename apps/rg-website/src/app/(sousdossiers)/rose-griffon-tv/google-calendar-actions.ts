@@ -1,5 +1,7 @@
 "use server";
 
+import { existsSync } from "node:fs";
+
 import { google } from "googleapis";
 
 import { createLogger } from "@/lib/logger";
@@ -16,17 +18,38 @@ const CALENDAR_ID =
 const DAYS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 /**
+ * Identifiants du service account : le couple `GOOGLE_CLIENT_EMAIL` +
+ * `GOOGLE_PRIVATE_KEY` (celui du calendrier des événements), sinon le fichier
+ * JSON de `GOOGLE_APPLICATION_CREDENTIALS` quand il existe vraiment. Le chemin
+ * hérité de l'ancien hôte n'existe plus sur le VPS : chaque lecture du planning
+ * RGTV échouait en ENOENT.
+ */
+function identifiantsGoogle():
+  | { credentials: { client_email: string; private_key: string } }
+  | { keyFile: string }
+  | null {
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  if (clientEmail && privateKey?.includes("PRIVATE KEY")) {
+    return { credentials: { client_email: clientEmail, private_key: privateKey.replaceAll(/\\n/g, "\n") } };
+  }
+  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (keyFile && existsSync(keyFile)) return { keyFile };
+  return null;
+}
+
+/**
  * Initialise le client Google Calendar via service account JWT.
  * Le service account doit avoir accès en lecture au calendar (partage explicite côté UI Google Calendar).
  */
 function getCalendarClient() {
-  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (!credentialsPath) {
-    throw new Error("GOOGLE_APPLICATION_CREDENTIALS non configurée");
+  const identifiants = identifiantsGoogle();
+  if (!identifiants) {
+    throw new Error("Service account Google non configuré");
   }
 
   const auth = new google.auth.GoogleAuth({
-    keyFile: credentialsPath,
+    ...identifiants,
     scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
   });
 
@@ -140,8 +163,8 @@ function transformEvent(event: unknown): StreamSchedule | null {
  */
 export async function fetchGoogleCalendarEvents(daysAhead: number = 7): Promise<StreamSchedule[]> {
   try {
-    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      logger.warn("GOOGLE_APPLICATION_CREDENTIALS non configurée");
+    if (!identifiantsGoogle()) {
+      logger.warn("Service account Google non configuré");
       return [];
     }
 
@@ -237,5 +260,5 @@ export async function getGoogleCalendarSchedulesByDay(): Promise<Record<string, 
  * Vérifie si l'API Google Calendar est configurée (service account JSON présent)
  */
 export async function isGoogleCalendarConfigured(): Promise<boolean> {
-  return Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  return identifiantsGoogle() !== null;
 }

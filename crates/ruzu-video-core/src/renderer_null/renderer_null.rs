@@ -11,11 +11,22 @@ use std::sync::{Arc, RwLock};
 
 use super::null_rasterizer::RasterizerNull;
 use crate::framebuffer_config::FramebufferConfig;
+use crate::host1x::gpu_device_memory_manager::{MaxwellDeviceMemoryManager, SMMU_PAGE_SIZE};
 use crate::host1x::syncpoint_manager::SyncpointManager;
 use crate::rasterizer_interface::RasterizerInterface;
 use crate::renderer_base::{
     update_current_framebuffer_layout, FramebufferLayout, RendererBase, RendererBaseData,
 };
+
+/// A composited layer read back to the CPU as RGBA8, row-major.
+pub struct CapturedFrame {
+    pub width: u32,
+    pub height: u32,
+    pub rgba: Vec<u8>,
+}
+
+/// Receives the first visible layer of every composition (headless frontends).
+pub type FrameCapture = Arc<dyn Fn(CapturedFrame) + Send + Sync>;
 
 /// Null renderer — corresponds to Eden's `Null::RendererNull`.
 ///
@@ -32,6 +43,7 @@ pub struct RendererNull {
     frame_end_notify: Arc<dyn Fn() + Send + Sync>,
     null_context: NullContext,
     rasterizer: RasterizerNull,
+    capture: Option<(Arc<MaxwellDeviceMemoryManager>, FrameCapture)>,
 }
 
 impl RendererNull {
@@ -50,7 +62,20 @@ impl RendererNull {
             frame_end_notify,
             null_context: NullContext,
             rasterizer: RasterizerNull::new(syncpoints),
+            capture: None,
         }
+    }
+
+    /// Ruzu extension: read each composited framebuffer back from device
+    /// memory (block-linear, as the OpenGL fallback path in `Layer` reads it)
+    /// and hand it to `capture`. Rendering stays a no-op; CPU-drawn surfaces
+    /// such as libnx framebuffers are what this shows.
+    pub fn set_frame_capture(
+        &mut self,
+        device_memory: Arc<MaxwellDeviceMemoryManager>,
+        capture: FrameCapture,
+    ) {
+        self.capture = Some((device_memory, capture));
     }
 
     /// Composite framebuffers — no-op in null renderer.
@@ -59,6 +84,15 @@ impl RendererNull {
     pub fn composite_impl(&mut self, layers: &[FramebufferConfig]) {
         if layers.is_empty() {
             return;
+        }
+        if let Some((device_memory, capture)) = &self.capture {
+            if let Some(frame) = layers
+                .iter()
+                .find(|layer| layer.address != 0)
+                .and_then(|layer| read_back(device_memory, layer))
+            {
+                capture(frame);
+            }
         }
         (self.frame_end_notify)();
         (self.frame_displayed_notify)();
@@ -148,6 +182,91 @@ impl RendererBase for RendererNull {
     fn set_gpu_ticks_getter(&mut self, getter: crate::renderer_base::GpuTicksGetter) {
         self.rasterizer.set_gpu_ticks_getter(getter);
     }
+}
+
+/// Reads one framebuffer layer from device memory and converts it to RGBA8.
+fn read_back(
+    device_memory: &MaxwellDeviceMemoryManager,
+    layer: &FramebufferConfig,
+) -> Option<CapturedFrame> {
+    use ruzu_core::hle::service::nvnflinger::pixel_format::PixelFormat as Android;
+
+    let bytes_per_pixel = match layer.pixel_format {
+        Android::Rgba8888 | Android::Rgbx8888 | Android::Bgra8888 => 4,
+        Android::Rgb565 => 2,
+        _ => return None,
+    };
+    if layer.width == 0 || layer.height == 0 || layer.stride < layer.width {
+        return None;
+    }
+    // Upstream hardcodes block_height_log2 = 4 for presented framebuffers.
+    let block_height_log2 = 4;
+    let size = crate::textures::decoders::calculate_size(
+        true,
+        bytes_per_pixel,
+        layer.stride,
+        layer.height,
+        1,
+        block_height_log2,
+        0,
+    );
+    let base = layer.address.wrapping_add(u64::from(layer.offset));
+    let mut tiled = vec![0u8; size];
+    let mut done = 0usize;
+    while done < size {
+        let addr = base + done as u64;
+        let in_page = (SMMU_PAGE_SIZE - (addr & (SMMU_PAGE_SIZE - 1))) as usize;
+        let len = in_page.min(size - done);
+        let ptr = device_memory.get_pointer(addr);
+        if ptr.is_null() {
+            return None;
+        }
+        // SAFETY: `get_pointer` resolves a mapped SMMU page; `len` stays inside it.
+        unsafe { std::ptr::copy_nonoverlapping(ptr, tiled[done..].as_mut_ptr(), len) };
+        done += len;
+    }
+    let mut linear = vec![0u8; (layer.stride * layer.height * bytes_per_pixel) as usize];
+    crate::textures::decoders::unswizzle_texture(
+        &mut linear,
+        &tiled,
+        bytes_per_pixel,
+        layer.stride,
+        layer.height,
+        1,
+        block_height_log2,
+        0,
+        1,
+    );
+    let crop = &layer.crop_rect;
+    let (left, top, right, bottom) = if crop.right > crop.left && crop.bottom > crop.top {
+        (
+            crop.left.max(0) as u32,
+            crop.top.max(0) as u32,
+            (crop.right as u32).min(layer.width),
+            (crop.bottom as u32).min(layer.height),
+        )
+    } else {
+        (0, 0, layer.width, layer.height)
+    };
+    let (width, height) = (right.saturating_sub(left), bottom.saturating_sub(top));
+    let mut rgba = Vec::with_capacity((width * height * 4) as usize);
+    for y in top..bottom {
+        for x in left..right {
+            let at = ((y * layer.stride + x) * bytes_per_pixel) as usize;
+            let px = &linear[at..at + bytes_per_pixel as usize];
+            rgba.extend_from_slice(&match layer.pixel_format {
+                Android::Rgba8888 => [px[0], px[1], px[2], px[3]],
+                Android::Rgbx8888 => [px[0], px[1], px[2], 0xFF],
+                Android::Bgra8888 => [px[2], px[1], px[0], px[3]],
+                _ => {
+                    let v = u16::from_le_bytes([px[0], px[1]]);
+                    let (r, g, b) = (v >> 11, (v >> 5) & 0x3F, v & 0x1F);
+                    [(r << 3 | r >> 2) as u8, (g << 2 | g >> 4) as u8, (b << 3 | b >> 2) as u8, 0xFF]
+                }
+            });
+        }
+    }
+    Some(CapturedFrame { width, height, rgba })
 }
 
 #[cfg(test)]

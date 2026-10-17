@@ -80,10 +80,40 @@ fn target() -> Value {
     ]})
 }
 
+fn val() -> Value {
+    json!({"oneOf": [
+        obj(&[("k", json!({"const": "imm"})), ("v", u())], &["k", "v"]),
+        obj(&[("k", json!({"const": "reg"})), ("r", u())], &["k", "r"]),
+        obj(&[("k", json!({"const": "tmp"})), ("t", u())], &["k", "t"]),
+        obj(&[("k", json!({"const": "flag"})), ("f", u())], &["k", "f"]),
+    ]})
+}
+
+/// Guest-semantics statement (see `pipeline::sem`).
+fn stmt() -> Value {
+    let alu = [
+        "add", "sub", "and", "or", "xor", "mul", "mul_hi_u", "mul_hi_s", "shl", "shr", "sar", "ror", "eq", "ne", "ltu",
+        "lts", "leu", "les", "div_u", "rem_u", "div_s", "rem_s", "sext8", "sext16", "not",
+    ];
+    let body = json!({"type": "array", "items": {"$ref": "#/$defs/stmt"}});
+    json!({"oneOf": [
+        obj(&[("s", json!({"const": "op"})), ("t", u()), ("op", en(&alu)), ("a", val()), ("b", val())], &["s", "t", "op", "a", "b"]),
+        obj(&[("s", json!({"const": "sel"})), ("t", u()), ("c", val()), ("a", val()), ("b", val())], &["s", "t", "c", "a", "b"]),
+        obj(&[("s", json!({"const": "set"})), ("r", u()), ("v", val())], &["s", "r", "v"]),
+        obj(&[("s", json!({"const": "set_flag"})), ("f", u()), ("v", val())], &["s", "f", "v"]),
+        obj(&[("s", json!({"const": "load"})), ("t", u()), ("bits", u()), ("addr", val()), ("kind", u())], &["s", "t", "bits", "addr", "kind"]),
+        obj(&[("s", json!({"const": "store"})), ("bits", u()), ("addr", val()), ("v", val()), ("kind", u())], &["s", "bits", "addr", "v", "kind"]),
+        obj(&[("s", json!({"const": "call"})), ("f", s()), ("args", arr(val())), ("t", u())], &["s", "f", "args"]),
+        obj(&[("s", json!({"const": "if"})), ("c", val()), ("then", body.clone()), ("els", body)], &["s", "c", "then"]),
+        obj(&[("s", json!({"const": "exit"}))], &["s"]),
+        obj(&[("s", json!({"const": "fallback"})), ("why", s())], &["s", "why"]),
+    ]})
+}
+
 fn insn() -> Value {
     let ops = [
         "nop", "mov", "lea", "bin", "un", "cmp", "test", "push", "pop", "leave", "setcc", "cmovcc", "call", "jmp",
-        "jcc", "ret", "unlifted",
+        "jcc", "ret", "unlifted", "guest",
     ];
     json!({
         "type": "object",
@@ -94,18 +124,26 @@ fn insn() -> Value {
             "kind": {"type": "string"},
             "cond": en(&["o", "no", "b", "ae", "e", "ne", "be", "a", "s", "ns", "l", "ge", "le", "g"]),
             "target": {"anyOf": [target(), u()]},
-            "pop": u(), "reason": s()
+            "pop": u(), "reason": s(),
+            "raw": u(), "body": {"type": "array", "items": {"$ref": "#/$defs/stmt"}}
         },
         "required": ["addr", "len", "text", "op"]
     })
 }
 
 fn ir() -> Value {
-    obj(
+    let mut v = obj(
         &[
             ("schema_version", u()),
-            ("format", en(&["pe", "elf"])),
-            ("arch", en(&["x86", "x86_64"])),
+            ("format", en(&["pe", "elf", "gba", "psx", "nes"])),
+            ("arch", en(&["x86", "x86_64", "aarch64", "armv4t", "r3000a", "6502"])),
+            (
+                "abi",
+                obj(
+                    &[("regs", arr(s())), ("link", s()), ("sp", s()), ("ret", s()), ("machine", s()), ("flags", arr(s())), ("isas", arr(s()))],
+                    &["regs", "link", "sp", "ret"],
+                ),
+            ),
             ("bits", u()),
             ("image_base", u()),
             ("entry", u()),
@@ -125,6 +163,7 @@ fn ir() -> Value {
                         ("addr", u()),
                         ("name", opt(s())),
                         ("truncated", b()),
+                        ("isa", u()),
                         ("blocks", arr(obj(&[("addr", u()), ("fallthrough", opt(u())), ("insns", arr(insn()))], &["addr", "fallthrough", "insns"]))),
                     ],
                     &["addr", "name", "blocks", "truncated"],
@@ -132,7 +171,11 @@ fn ir() -> Value {
             ),
         ],
         &["schema_version", "format", "arch", "bits", "image_base", "entry", "image_end", "imports", "sections", "functions"],
-    )
+    );
+    if let Some(o) = v.as_object_mut() {
+        o.insert("$defs".into(), json!({ "stmt": stmt() }));
+    }
+    v
 }
 
 fn adapter() -> Value {

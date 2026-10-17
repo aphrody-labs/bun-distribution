@@ -790,6 +790,9 @@
       "bin": {
         "bun-android": "./src/cli.ts",
       },
+      "dependencies": {
+        "@aphrody/bun-workspace": "workspace:*",
+      },
     },
     "packages/bun-app-host": {
       "name": "@aphrody/bun-app-host",

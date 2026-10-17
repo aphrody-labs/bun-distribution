@@ -4,7 +4,7 @@
 Linux is the development and release target. The complete workspace uses
 CPython 3.12; the SDK's Linux artifact matrix covers CPython 3.11–3.14.
 
-- [x] Native source owned by the Rust workspace (`crates/ai/rag-python`); no projected copy in the package (2026-10-05).
+- [x] Native source owned by the Rust workspace (`crates/aphrody-rust`); no projected copy in the package (2026-10-05).
 - [x] Separate SDK, Python CLI and meeting application distributions.
 - [x] Root lint, format, types and tests; clean installed distribution gates.
 - [x] Linux executable discovery, permissions and explicit configuration.

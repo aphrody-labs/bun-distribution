@@ -594,3 +594,7 @@
 [submodule "vendor/libretro-database"]
 	path = vendor/libretro-database
 	url = https://github.com/aphrody-labs/libretro-database.git
+[submodule "vendor/recalbox"]
+	path = vendor/recalbox
+	url = https://gitlab.com/recalbox/recalbox.git
+	shallow = true

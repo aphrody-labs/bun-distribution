@@ -25,6 +25,12 @@ impl Gba {
         gba.skip_bios();
         Ok(Self { gba })
     }
+
+    /// Install the dispatcher of statically recompiled code (`crate::recomp::gba`); `None`
+    /// restores pure interpretation.
+    pub fn set_cpu_runner(&mut self, runner: Option<rustboyadvance_core::gba::CpuRunner>) {
+        self.gba.set_cpu_runner(runner);
+    }
 }
 
 impl Machine for Gba {

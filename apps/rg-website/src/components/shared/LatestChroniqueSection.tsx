@@ -123,7 +123,7 @@ export async function LatestChroniqueSection() {
           {/* Lien vers toutes les chroniques */}
           <div className="mt-6 pt-6 border-t border-border">
             <Link
-              href="/news?format=chronique"
+              href="/chroniques"
               className="inline-flex items-center gap-2 text-sm font-medium text-rg-brique hover:opacity-80 transition-colors group"
             >
               Voir toutes les chroniques

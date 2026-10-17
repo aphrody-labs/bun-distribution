@@ -904,7 +904,7 @@ impl IApplicationFunctions {
         // through its existing wire-format accessor, without a second owner.
         let raw = metadata.get_raw_bytes();
         let offset = std::mem::offset_of!(crate::file_sys::control_metadata::RawNACP, seed_for_pseudo_device_id);
-        let digest = openssl::sha::sha1(&raw[offset..offset + 8]);
+        let digest: [u8; 20] = <sha1::Sha1 as sha1::Digest>::digest(&raw[offset..offset + 8]).into();
         Ok(common::uuid::UUID::make_rfc4122_v5(digest[..16].try_into().unwrap()))
     }
 

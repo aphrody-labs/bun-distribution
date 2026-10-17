@@ -18,48 +18,20 @@ _spec.loader.exec_module(_module)
 _PACKAGE = Path(__file__).resolve().parents[2] / "packages/aphrody"
 
 
-def native_backend():
-    import bun_native_build
-    return bun_native_build
+def test_maturin_builds_the_workspace_crate_in_place():
+    import tomllib
 
-
-def test_native_build_requires_explicit_bun_checkout(monkeypatch):
-    backend = native_backend()
-    monkeypatch.chdir(_PACKAGE)
-    monkeypatch.delenv("APHRODY_BUN_CHECKOUT", raising=False)
-    with pytest.raises(RuntimeError, match="APHRODY_BUN_CHECKOUT"):
-        with backend._native_project():
-            pytest.fail("An unconfigured native source must not build")
-
-
-def test_python_sdist_keeps_native_sources_external(tmp_path, monkeypatch):
-    import tarfile
-
-    backend = native_backend()
-    monkeypatch.chdir(_PACKAGE)
-    archive = tmp_path / backend.build_sdist(tmp_path)
-    with tarfile.open(archive) as distribution:
-        names = distribution.getnames()
-        assert any(name.endswith("/src/aphrody/aphrody_rust.pyi") for name in names)
-        metadata = distribution.extractfile("aphrody-0.1.0/pyproject.toml")
-        assert metadata and b"bun_native_build" in metadata.read()
-        assert any(name.endswith("/LICENSES/AGPL-3.0-only.txt") for name in names)
-        assert not any(
-            name.endswith((".rs", ".pyd", ".so", "Cargo.toml")) for name in names
-        )
-
-
-def test_native_build_rejects_moving_revision(tmp_path, monkeypatch):
-    backend = native_backend()
-    text = (_PACKAGE / "pyproject.toml").read_text()
-    import re
-
-    text = re.sub(r"(?m)^revision = .*$", 'revision = "main"', text)
-    (tmp_path / "pyproject.toml").write_text(text)
-    monkeypatch.chdir(tmp_path)
-    with pytest.raises(ValueError, match="immutable Git revision"):
-        with backend._native_project():
-            pytest.fail("A mutable native revision must not build")
+    metadata = tomllib.loads((_PACKAGE / "pyproject.toml").read_text())
+    assert metadata["build-system"]["build-backend"] == "maturin"
+    maturin = metadata["tool"]["maturin"]
+    assert maturin["locked"] is True
+    manifest = (_PACKAGE / maturin["manifest-path"]).resolve()
+    assert manifest == _module.REPOSITORY / _module.NATIVE_CRATES[0] / "Cargo.toml"
+    crate = tomllib.loads(manifest.read_text())
+    assert crate["package"]["name"] == "aphrody-rust"
+    assert maturin["module-name"] == "aphrody." + crate["lib"]["name"]
+    assert "abi3-py311" in crate["dependencies"]["pyo3"]["features"]
+    assert "bun-native" not in metadata["tool"].get("aphrody", {})
 
 
 def package_inputs(root):

@@ -4,6 +4,10 @@ version.workspace = true
 edition = "2021"
 
 [features]
+default = ["openssl"]
+# The OpenSSL backend of the ssl service; without it the service reports upstream's
+# "no SSL backend" error (ssl_backend_none), which hosts without OpenSSL use.
+openssl = ["dep:openssl"]
 debug-logs = []
 step_tracer = []
 
@@ -28,15 +32,16 @@ parking_lot.workspace = true
 thiserror = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
+sha1 = { workspace = true }
 sha2 = { version = "0.10" }
 md-5.workspace = true
 
 [target.'cfg(not(target_os = "openbsd"))'.dependencies]
-openssl.workspace = true
+openssl = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "openbsd")'.dependencies]
 # OpenBSD 7.9 ships LibreSSL 4.3, newer than openssl-sys currently accepts.
-openssl = { workspace = true, features = ["vendored"] }
+openssl = { workspace = true, features = ["vendored"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [

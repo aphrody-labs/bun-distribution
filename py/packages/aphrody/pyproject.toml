@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [build-system]
-requires = ["bun-native-build @ git+https://github.com/aphrody-labs/bun.git@fcfc2a6dca114193a1d7120ad9cd7c2855a022b0#subdirectory=packages/bun-python-native/python/build-backend"]
-build-backend = "bun_native_build"
+requires = ["maturin==1.14.1"]
+build-backend = "maturin"
 
 [project]
 name = "aphrody"
@@ -37,17 +37,12 @@ Repository = "https://github.com/aphrody-labs/aphrody"
 Documentation = "https://github.com/aphrody-labs/aphrody/tree/main/py/docs/sdk"
 
 [tool.maturin]
-# Native source and lock are staged from the pinned Bun fork, outside this checkout.
-manifest-path = "Cargo.toml"
+# The extension is the workspace crate crates/aphrody-rust; the root Cargo.lock pins it.
+manifest-path = "../../../crates/aphrody-rust/Cargo.toml"
 locked = true
 exclude = [{ "path" = "tests/**", "format" = "wheel" }, { "path" = "build/**", "format" = "wheel" }]
 python-source = "src"
 module-name = "aphrody.aphrody_rust"
-
-[tool.aphrody.bun-native]
-revision = "84a5f33140cef2a63088d8484e84c0a2e5aba785"
-workspace = "packages/bun-python-native"
-manifest = "crates/aphrody-rust/Cargo.toml"
 
 [tool.uv.sources.google-antigravity]
 git = "https://github.com/aphrody-labs/antigravity-sdk-python.git"

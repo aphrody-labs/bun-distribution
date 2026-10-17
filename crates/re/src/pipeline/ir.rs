@@ -5,6 +5,7 @@
 //! memory references. Instructions the lifter cannot model become [`IrOp::Unlifted`] and are
 //! reported, never silently dropped.
 
+use super::sem::Guest;
 use serde::{Deserialize, Serialize};
 
 /// Operand of an IR instruction.
@@ -266,6 +267,8 @@ pub enum IrOp {
         /// Why it is not modelled.
         reason: String,
     },
+    /// Console instruction lowered to guest semantics (see [`super::sem`]).
+    Guest(Guest),
 }
 
 /// One lifted instruction.
@@ -304,6 +307,13 @@ pub struct IrFunction {
     pub blocks: Vec<IrBlock>,
     /// True when the instruction budget cut the function short.
     pub truncated: bool,
+    /// Instruction-set state (index into [`Abi::isas`]; 0 for single-ISA modules).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub isa: u8,
+}
+
+fn is_zero(v: &u8) -> bool {
+    *v == 0
 }
 
 /// Imported symbol.
@@ -336,8 +346,8 @@ pub struct SectionEntry {
     pub write: bool,
 }
 
-/// Register file of a link-register architecture (AArch64). Absent for x86, whose register file and
-/// stack-based calls are built into the emitters.
+/// Register file of a link-register architecture (AArch64) or of a console CPU lowered to guest
+/// semantics. Absent for x86, whose register file and stack-based calls are built into the emitters.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Abi {
     /// Names of the 64-bit CPU registers (struct fields of the emitted CPU).
@@ -348,6 +358,15 @@ pub struct Abi {
     pub sp: String,
     /// Integer return-value register.
     pub ret: String,
+    /// Bun Engine machine runtime the guest semantics target (`gba`, `psx`, `nes`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub machine: Option<String>,
+    /// Guest flag names, indexed by [`super::sem::Val::Flag`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub flags: Vec<String>,
+    /// Instruction-set states, indexed by [`IrFunction::isa`] (`arm`, `thumb`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub isas: Vec<String>,
 }
 
 /// Lifted module.
@@ -404,7 +423,7 @@ impl IrModule {
                 s.blocks += 1;
                 for i in &b.insns {
                     s.instructions += 1;
-                    if matches!(i.op, IrOp::Unlifted { .. }) {
+                    if matches!(&i.op, IrOp::Unlifted { .. }) || matches!(&i.op, IrOp::Guest(g) if g.is_fallback()) {
                         s.unlifted += 1;
                     } else {
                         s.lifted += 1;

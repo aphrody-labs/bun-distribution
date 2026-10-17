@@ -79,7 +79,6 @@ const RANGS_ATTENDUS: Readonly<Record<string, number>> = {
   "aphrody-nie-launcher": 4,
   "aphrody-nie-model-serve": 4,
   "aphrody-nie-runtime": 4,
-  "aphrody-nie-viewer-web": 4,
   "aphrody-nie-app": 5,
   "aphrody-nie-ffi": 5,
   "aphrody-nie-net": 5,

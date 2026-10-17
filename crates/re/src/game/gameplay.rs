@@ -900,7 +900,7 @@ fn bcs(data: &[u8], filename: &str) -> Load<Loaded> {
     }
 
     let mut skeletons = Vec::new();
-    let mut read_skeleton = |file: &mut File<'_>, table: i128| -> Load<Option<Value>> {
+    let read_skeleton = |file: &mut File<'_>, table: i128| -> Load<Option<Value>> {
         file.seek(table)?;
         let offset = file.u32()?;
         if offset == 0 {

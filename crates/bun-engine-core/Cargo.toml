@@ -25,6 +25,10 @@ gba = ["dep:rustboyadvance-core"]
 psx = ["dep:starpsx-core"]
 # NES on TetaNES.
 nes = ["dep:tetanes-core"]
+# Nintendo 3DS on Zakuro (software PICA renderer); boots CXI/CCI/CIA and converted 3DSX.
+ctr = ["dep:zakuro-core", "dep:zakuro-common"]
+# Nintendo Switch on Ruzu (rdynarmic JIT, null renderer with CPU framebuffer readback).
+switch = ["dep:ruzu-core", "dep:ruzu-common", "dep:video_core", "dep:hid_core", "dep:log"]
 # GameCube and Wii on the Gekko/Broadway interpreter.
 wii = ["dep:aphrody-wii-runtime", "dep:aphrody-wii-image"]
 # x86 guests on the Windows Hypervisor Platform.
@@ -44,6 +48,13 @@ bevy_ecs = { workspace = true, optional = true }
 rdynarmic = { path = "../rdynarmic", optional = true }
 tetanes-core = { path = "../../vendor/tetanes/tetanes-core", optional = true }
 starpsx-core = { path = "../../vendor/starpsx/core", optional = true }
+ruzu-core = { package = "core", path = "../ruzu-core", default-features = false, optional = true }
+ruzu-common = { package = "common", path = "../ruzu-common", optional = true }
+video_core = { path = "../ruzu-video-core", optional = true }
+hid_core = { path = "../ruzu-hid-core", optional = true }
+log = { workspace = true, optional = true }
+zakuro-core = { path = "../../vendor/zakuro/crates/zakuro-core", optional = true }
+zakuro-common = { path = "../../vendor/zakuro/crates/zakuro-common", optional = true }
 rustboyadvance-core = { path = "../../vendor/rustboyadvance-ng/core", default-features = false, optional = true }
 aphrody-wii-runtime = { path = "../aphrody-wii-runtime", optional = true }
 aphrody-wii-image = { path = "../aphrody-wii-image", default-features = false, optional = true }

@@ -17,7 +17,7 @@
  * transformation also spares Supabase egress. An explicit `unoptimized` or
  * `loader` prop always wins. See docs/aphrody/reference/infra/rg-free-tier-allocation.md.
  */
-import NextImage, { getImageProps as nextGetImageProps } from "next/dist/api/image";
+import { getImageProps as nextGetImageProps } from "next/dist/api/image";
 import type { ImageProps } from "next/image";
 
 /** Hosts whose images are worth a Vercel transformation (first-party uploads). */
@@ -34,14 +34,12 @@ export function isOptimizedImageSource(src: ImageProps["src"]): boolean {
   }
 }
 
-function withGuardrail(props: ImageProps): ImageProps {
+export function withGuardrail(props: ImageProps): ImageProps {
   if (props.unoptimized !== undefined || props.loader) return props;
   return isOptimizedImageSource(props.src) ? props : { ...props, unoptimized: true };
 }
 
-export default function Image(props: ImageProps) {
-  return <NextImage {...withGuardrail(props)} />;
-}
+export { default } from "./image-cdn-client";
 
 export function getImageProps(props: ImageProps) {
   return nextGetImageProps(withGuardrail(props));

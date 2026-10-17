@@ -5,14 +5,20 @@
 
 pub mod contract;
 pub mod emit_c;
+pub mod emit_guest;
 pub mod emit_rust;
 pub mod ghidra;
 pub mod image;
 pub mod ir;
 pub mod lift;
+pub mod lift_6502;
 pub mod lift_aarch64;
+pub mod lift_armv4t;
+pub mod lift_mips;
+pub mod recomp;
 pub mod registry;
 pub mod schema;
+pub mod sem;
 pub mod stages;
 pub mod util;
 

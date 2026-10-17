@@ -12,18 +12,29 @@ pub struct Psx {
 }
 
 impl Psx {
+    /// Boot `media` (PS-EXE, disc image, or empty for the BIOS shell) on `bios`.
     pub fn new(bios: &[u8], media: &[u8]) -> Result<Self, String> {
+        Self::with_runner(bios, media, None)
+    }
+
+    /// Same as [`Psx::new`], running statically recompiled code through `runner`
+    /// (`crate::recomp::psx`) from the first BIOS instruction on.
+    pub fn with_runner(bios: &[u8], media: &[u8], runner: Option<starpsx_core::Runner>) -> Result<Self, String> {
         let bios: Box<[u8; 0x80000]> = bios
             .to_vec()
             .into_boxed_slice()
             .try_into()
             .map_err(|_| "PlayStation BIOS must be exactly 512 KiB".to_string())?;
-        let media = if media.starts_with(b"PS-X EXE") {
-            Media::Executable(media.to_vec())
-        } else {
-            Media::Binary(media.to_vec())
-        };
-        let system = PSXBuilder::new(bios).with_media(media).build().map_err(|e| format!("PlayStation: {e}"))?;
+        let mut builder = PSXBuilder::new(bios);
+        if let Some(runner) = runner {
+            builder = builder.with_runner(runner);
+        }
+        if media.starts_with(b"PS-X EXE") {
+            builder = builder.with_media(Media::Executable(media.to_vec()));
+        } else if !media.is_empty() {
+            builder = builder.with_media(Media::Binary(media.to_vec()));
+        }
+        let system = builder.build().map_err(|e| format!("PlayStation: {e}"))?;
         Ok(Self { system: Box::new(system), screen: Screen { width: 320, height: 240, rgb: vec![0; 320 * 240 * 3] } })
     }
 }
@@ -72,5 +83,9 @@ impl Machine for Psx {
 
     fn screens(&self) -> Vec<Screen> {
         vec![Screen { width: self.screen.width, height: self.screen.height, rgb: self.screen.rgb.clone() }]
+    }
+
+    fn console(&mut self) -> Vec<u8> {
+        self.system.take_console()
     }
 }

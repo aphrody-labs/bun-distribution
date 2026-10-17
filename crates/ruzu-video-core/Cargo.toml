@@ -9,7 +9,7 @@ metal-spirv-validation = ["dep:spirv-cross2"]
 [dependencies]
 aphrody-switch = { path = "../aphrody-switch" }
 common.workspace = true
-ruzu_core = { package = "core", path = "../ruzu-core" }
+ruzu_core = { package = "core", path = "../ruzu-core", default-features = false }
 shader_recompiler.workspace = true
 gl.workspace = true
 log = { workspace = true }

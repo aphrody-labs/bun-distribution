@@ -97,9 +97,17 @@ export class PostgresQueryBuilder implements PromiseLike<Result> {
   lte(column: string, value: unknown) {
     return this.condition(column, "<=", value);
   }
-  is(column: string, operator: "null" | "true" | "false", value: unknown) {
-    if (operator === "null") this.where.push(`${identifier(column)} IS ${value === null ? "NULL" : "NOT NULL"}`);
-    else this.where.push(`${identifier(column)} IS ${operator === "true" ? "TRUE" : "FALSE"}`);
+  /**
+   * `.is(colonne, null | true | false)`, comme supabase-js. L'ancienne forme à
+   * trois arguments (`.is(colonne, "null", null)`) reste acceptée. Un appel
+   * `.is("parent_id", null)` produisait `IS FALSE` sur une colonne uuid.
+   */
+  is(column: string, value: null | boolean | "null" | "true" | "false", legacyValue?: unknown) {
+    let target: "NULL" | "NOT NULL" | "TRUE" | "FALSE";
+    if (arguments.length >= 3 && value === "null") target = legacyValue === null ? "NULL" : "NOT NULL";
+    else if (value === null || value === "null") target = "NULL";
+    else target = value === true || value === "true" ? "TRUE" : "FALSE";
+    this.where.push(`${identifier(column)} IS ${target}`);
     return this;
   }
   ilike(column: string, value: string) {

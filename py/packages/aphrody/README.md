@@ -152,7 +152,7 @@ execution; `AuthenticatedDocsClient`, `AuthenticatedDriveClient`, and
 Persistent clients support context managers and release connections they own.
 
 The wheel includes the stable-ABI Rust ranking extension (built from the monorepo
-crate `crates/ai/rag-python`, with its CycloneDX SBOM), native type stubs, `py.typed`
+crate `crates/aphrody-rust`, with its CycloneDX SBOM), native type stubs, `py.typed`
 and the headless Blender scripts. Wheels are built inside the Aphrody monorepo
 (`uv build --wheel`); the Rust source is not copied into this package.
 

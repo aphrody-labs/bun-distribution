@@ -1,9 +1,8 @@
 import { createPostgresClient } from "@rosegriffon/db/service";
 import { type AccountSession, type AccountTabId, resolveAccountTab } from "@rosegriffon/ui";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/lib/auth";
+import { getPgPool } from "@/lib/db/pg";
 import { getServerSession } from "@/lib/auth-helpers";
 
 import { AccountClient } from "./account-client";
@@ -47,16 +46,30 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
   // N'envoyer que les identifiants au composant client. Les jetons de session
   // servent à authentifier et restent exclusivement côté serveur.
+  // Lecture directe : `auth.api.listSessions` exige une session « fraîche »
+  // (moins d'un jour) et laissait la liste vide à presque tous les membres.
   let sessions: AccountSession[] = [];
   try {
-    const list = await auth.api.listSessions({ headers: await headers() });
-    sessions = (list ?? []).map(s => ({
-      createdAt: new Date(s.createdAt).toISOString(),
+    const { rows } = await getPgPool().query<{
+      id: string;
+      created_at: Date | string;
+      expires_at: Date | string | null;
+      ip_address: string | null;
+      user_agent: string | null;
+    }>(
+      `SELECT id, created_at, expires_at, ip_address, user_agent
+         FROM session
+        WHERE user_id = $1 AND (expires_at IS NULL OR expires_at > now())
+        ORDER BY created_at DESC`,
+      [user.id],
+    );
+    sessions = rows.map(s => ({
+      createdAt: new Date(s.created_at).toISOString(),
       current: s.id === session.session.id,
-      expiresAt: s.expiresAt ? new Date(s.expiresAt).toISOString() : null,
-      ipAddress: s.ipAddress ?? null,
+      expiresAt: s.expires_at ? new Date(s.expires_at).toISOString() : null,
+      ipAddress: s.ip_address ?? null,
       id: s.id,
-      userAgent: s.userAgent ?? null,
+      userAgent: s.user_agent ?? null,
     }));
   } catch (error) {
     console.error("[compte] liste des sessions indisponible", error);

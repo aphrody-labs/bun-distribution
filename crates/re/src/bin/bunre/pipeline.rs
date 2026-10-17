@@ -5,6 +5,7 @@
 //! [--max-functions N] [--max-insns N]`, `adapters [--stage S]`, `schema DIR`.
 
 use bun_re::pipeline::contract::{Stage, TargetKind};
+use bun_re::pipeline::recomp::{RecompTarget, Recompile};
 use bun_re::pipeline::registry::{Options, Registry};
 use bun_re::pipeline::{run, schema};
 use std::path::PathBuf;
@@ -77,6 +78,52 @@ pub fn main(args: Vec<String>) -> ExitCode {
         _ => {
             eprintln!("unknown subcommand {cmd}");
             ExitCode::from(2)
+        }
+    }
+}
+
+const RECOMPILE_USAGE: &str = "usage: bunre recompile <input> --target wasm|exe --out DIR [--machine gba|psx|nes] [--bios FILE] [--frames N] [--no-build] [--timeout SECS]";
+
+/// `bunre recompile`: lift a console BIOS/ROM image, emit a Rust crate over the Bun Engine core,
+/// build it for the host or `wasm32-unknown-unknown` and verify it against the interpreter.
+/// Prints the pipeline report as JSON.
+pub fn recompile(args: Vec<String>) -> ExitCode {
+    let Some(input) = args.first().filter(|a| !a.starts_with("--")).cloned() else {
+        eprintln!("{RECOMPILE_USAGE}");
+        return ExitCode::from(2);
+    };
+    let Some(target) = flag(&args, "--target").map_or(Some(RecompTarget::Exe), |t| RecompTarget::parse(&t)) else {
+        eprintln!("recompile: --target must be wasm or exe");
+        return ExitCode::from(2);
+    };
+    let out = flag(&args, "--out").map_or_else(|| PathBuf::from("bunre-recompile"), PathBuf::from);
+    let mut o = Options::new(input, TargetKind::Firmware, out);
+    if let Some(n) = flag(&args, "--timeout").and_then(|v| v.parse().ok()) {
+        o.timeout_secs = n;
+    }
+    if let Some(n) = flag(&args, "--max-insns").and_then(|v| v.parse().ok()) {
+        o.max_insns = n;
+    }
+    o.recompile = Some(Recompile {
+        target,
+        machine: flag(&args, "--machine"),
+        bios: flag(&args, "--bios").map(PathBuf::from),
+        frames: flag(&args, "--frames").and_then(|v| v.parse().ok()).unwrap_or(300),
+        build: !args.iter().any(|a| a == "--no-build"),
+    });
+    let build = o.recompile.as_ref().is_some_and(|r| r.build);
+    match run(o) {
+        Ok(rep) => {
+            println!("{}", serde_json::to_string(&rep).unwrap_or_default());
+            // Success is the verification passing (or the crate being emitted with --no-build);
+            // analysis stages that only report partial information do not fail a recompile.
+            let wanted = if build { ("recompile-verify", Stage::Verify) } else { ("emit-console-rust", Stage::Decompile) };
+            let ok = rep.stages.iter().any(|s| s.adapter == wanted.0 && s.stage == wanted.1 && s.status == bun_re::pipeline::contract::StageStatus::Ok);
+            if ok { ExitCode::SUCCESS } else { ExitCode::from(1) }
+        }
+        Err(e) => {
+            eprintln!("recompile: {e}");
+            ExitCode::from(1)
         }
     }
 }

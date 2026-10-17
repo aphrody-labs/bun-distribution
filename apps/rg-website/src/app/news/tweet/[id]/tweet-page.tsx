@@ -9,8 +9,6 @@ import { notFound } from "next/navigation";
 import { getPgPool } from "@/lib/db/pg";
 import { getAuthorInfo } from "@/lib/author";
 
-export const dynamic = "force-static";
-export const revalidate = 86400;
 
 interface TweetMedia {
   type?: string;
@@ -48,46 +46,75 @@ interface TweetRow {
 
 type TweetMetaRow = Pick<TweetRow, "text" | "translation" | "author_username" | "author_name" | "media" | "raw_tweets">;
 
-const AZALEE_USERNAME = "Azalee_IE";
+/**
+ * Compte X dont une route publie les posts.
+ *
+ * `/news/tweet/<id>` sert les posts d'@Azalee_IE (journal du wiki) et
+ * `/posts-x/<id>` ceux de Rose Griffon : un post n'est servi que par la route
+ * de son compte, jamais par l'autre.
+ */
+export interface TweetScope {
+  authors: readonly string[];
+  backHref: string;
+  backLabel: string;
+  brand: string;
+  handle: string;
+}
 
-async function getTweetMetaById(id: string): Promise<TweetMetaRow | null> {
+export const POSTS_X_AZALEE: TweetScope = {
+  authors: ["Azalee_IE"],
+  backHref: "/news",
+  backLabel: "Actualités",
+  brand: "Azalée",
+  handle: "@Azalee_IE",
+};
+
+export const POSTS_X_ROSE_GRIFFON: TweetScope = {
+  authors: ["rose_griffon", "rosegriffon_fr"],
+  backHref: "/posts-x",
+  backLabel: "Posts X",
+  brand: "Rose Griffon",
+  handle: "@rose_griffon",
+};
+
+async function getTweetMetaById(id: string, authors: readonly string[]): Promise<TweetMetaRow | null> {
   const pool = getPgPool();
   const { rows } = await pool.query<TweetMetaRow>(
     `SELECT text, translation, author_username, author_name, media, raw_tweets
 		 FROM tweets
-		 WHERE id = $1 AND author_username = $2
+		 WHERE id = $1 AND author_username = ANY($2::text[])
 		 LIMIT 1`,
-    [id, AZALEE_USERNAME],
+    [id, [...authors]],
   );
   return rows[0] ?? null;
 }
 
-async function getTweetMetaByThreadId(id: string): Promise<TweetMetaRow | null> {
+async function getTweetMetaByThreadId(id: string, authors: readonly string[]): Promise<TweetMetaRow | null> {
   const pool = getPgPool();
   const { rows } = await pool.query<TweetMetaRow>(
     `SELECT text, translation, author_username, author_name, media, raw_tweets
 		 FROM tweets
-		 WHERE raw_tweets @> $1::jsonb AND author_username = $2
+		 WHERE raw_tweets @> $1::jsonb AND author_username = ANY($2::text[])
 		 LIMIT 1`,
-    [JSON.stringify([{ id }]), AZALEE_USERNAME],
+    [JSON.stringify([{ id }]), [...authors]],
   );
   return rows[0] ?? null;
 }
 
-async function getTweetById(id: string): Promise<TweetRow | null> {
+async function getTweetById(id: string, authors: readonly string[]): Promise<TweetRow | null> {
   const pool = getPgPool();
-  const { rows } = await pool.query<TweetRow>(`SELECT * FROM tweets WHERE id = $1 AND author_username = $2 LIMIT 1`, [
+  const { rows } = await pool.query<TweetRow>(`SELECT * FROM tweets WHERE id = $1 AND author_username = ANY($2::text[]) LIMIT 1`, [
     id,
-    AZALEE_USERNAME,
+    [...authors],
   ]);
   return rows[0] ?? null;
 }
 
-async function getTweetByThreadId(id: string): Promise<TweetRow | null> {
+async function getTweetByThreadId(id: string, authors: readonly string[]): Promise<TweetRow | null> {
   const pool = getPgPool();
   const { rows } = await pool.query<TweetRow>(
-    `SELECT * FROM tweets WHERE raw_tweets @> $1::jsonb AND author_username = $2 LIMIT 1`,
-    [JSON.stringify([{ id }]), AZALEE_USERNAME],
+    `SELECT * FROM tweets WHERE raw_tweets @> $1::jsonb AND author_username = ANY($2::text[]) LIMIT 1`,
+    [JSON.stringify([{ id }]), [...authors]],
   );
   return rows[0] ?? null;
 }
@@ -103,12 +130,15 @@ function estimateReadTime(text: string): number {
   return Math.max(1, Math.ceil(text.trim().split(/\s+/).length / 200));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateTweetMetadata(
+  { params }: { params: Promise<{ id: string }> },
+  scope: TweetScope,
+): Promise<Metadata> {
   const { id } = await params;
-  let tweet = await getTweetMetaById(id);
+  let tweet = await getTweetMetaById(id, scope.authors);
 
   if (!tweet) {
-    tweet = await getTweetMetaByThreadId(id);
+    tweet = await getTweetMetaByThreadId(id, scope.authors);
   }
 
   const { title } = extractTitleAndBody(tweet?.translation || tweet?.text || "");
@@ -122,11 +152,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       title: title.slice(0, 60),
       ...(image && { images: [{ url: image }] }),
     },
-    title: `${title.slice(0, 60)} | Azalée`,
+    title: `${title.slice(0, 60)} | ${scope.brand}`,
     twitter: {
       card: "summary_large_image",
-      creator: tweet?.author_username ? `@${tweet.author_username}` : "@Azalee_IE",
-      site: tweet?.author_username ? `@${tweet.author_username}` : "@Azalee_IE",
+      creator: tweet?.author_username ? `@${tweet.author_username}` : scope.handle,
+      site: tweet?.author_username ? `@${tweet.author_username}` : scope.handle,
     },
   };
 }
@@ -271,12 +301,12 @@ function formatSectionText(text: string, isFirstSection = false) {
   );
 }
 
-export default async function TweetPage({ params }: { params: Promise<{ id: string }> }) {
+export async function renderTweetPage({ params }: { params: Promise<{ id: string }> }, scope: TweetScope) {
   const { id } = await params;
-  let tweet = await getTweetById(id);
+  let tweet = await getTweetById(id, scope.authors);
 
   if (!tweet) {
-    tweet = await getTweetByThreadId(id);
+    tweet = await getTweetByThreadId(id, scope.authors);
   }
 
   if (!tweet) {
@@ -360,12 +390,12 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
           {/* Back button */}
           <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
             <Link
-              href="/news"
+              href={scope.backHref}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold
                 bg-black/40 hover:bg-black/60 border border-white/10 backdrop-blur-md text-white transition-all hover:scale-[1.02]"
             >
               <ChevronLeft className="size-4" />
-              <span>Actualités</span>
+              <span>{scope.backLabel}</span>
             </Link>
           </div>
         </div>

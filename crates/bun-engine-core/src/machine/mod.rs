@@ -2,6 +2,8 @@
 
 #[cfg(feature = "arm")]
 pub mod arm;
+#[cfg(feature = "ctr")]
+pub mod ctr;
 #[cfg(feature = "nds")]
 pub mod nds;
 #[cfg(feature = "nes")]
@@ -10,6 +12,8 @@ pub mod nes;
 pub mod gba;
 #[cfg(feature = "psx")]
 pub mod psx;
+#[cfg(feature = "switch")]
+pub mod switch;
 #[cfg(feature = "wii")]
 pub mod wii;
 #[cfg(all(windows, feature = "x86"))]
@@ -43,6 +47,20 @@ pub struct Screen {
     pub width: usize,
     pub height: usize,
     pub rgb: Vec<u8>,
+}
+
+/// Write every screen as `screen<i>.ppm` (binary P6) into `dir`.
+///
+/// # Errors
+/// Returns the first I/O error.
+pub fn write_screens(dir: &std::path::Path, screens: &[Screen]) -> std::io::Result<()> {
+    std::fs::create_dir_all(dir)?;
+    for (i, s) in screens.iter().enumerate() {
+        let mut ppm = format!("P6\n{} {}\n255\n", s.width, s.height).into_bytes();
+        ppm.extend_from_slice(&s.rgb);
+        std::fs::write(dir.join(format!("screen{i}.ppm")), ppm)?;
+    }
+    Ok(())
 }
 
 /// Result of advancing a machine by one video frame.

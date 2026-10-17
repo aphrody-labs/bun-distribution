@@ -184,7 +184,7 @@ export default async function AchilleaHomePage() {
               </span>
               <h2 id="vods-title">Revoir les matchs</h2>
             </div>
-            <a href="https://youtube.com/@Achillea_IE" target="_blank" rel="noopener noreferrer">
+            <a href="https://youtube.com/@AchilleaRG" target="_blank" rel="noopener noreferrer">
               Chaîne Achilléa <ArrowRight aria-hidden="true" />
             </a>
           </div>

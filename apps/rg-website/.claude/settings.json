@@ -4,5 +4,11 @@
     "supabase@anthropic-plugin-directory": true,
     "modern-web-guidance@claude-plugins-official": true,
     "neon@anthropic-plugin-directory": true
+  },
+  "includeCoAuthoredBy": false,
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
   }
 }

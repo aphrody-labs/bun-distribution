@@ -154,6 +154,11 @@ export function createRoseGriffonAuth(options: RoseGriffonAuthOptions) {
     secret,
     user: {
       ...commonAuthOptions.user,
+      additionalFields: {
+        // Langue préférée du compte (`fr`, `en`, `ja`), réglée par le sélecteur
+        // de langue : elle suit le membre d'un appareil à l'autre.
+        locale: { type: "string", required: false, input: true },
+      },
       ...createAccountOptions({
         appName: "Rose Griffon",
         executerSql: options.executerSql,
@@ -214,18 +219,13 @@ export function createRoseGriffonAuth(options: RoseGriffonAuthOptions) {
       },
       session: {
         create: {
-          after: async session => {
+          after: async (session, context) => {
+            // La ligne de session ne porte que `userId` : le compte est relu pour
+            // resynchroniser le profil (avatar et pseudo Discord à jour).
             try {
-              await ensureUserProfile(
-                session.user as {
-                  id: string;
-                  name?: string | null;
-                  email?: string | null;
-                  image?: string | null;
-                },
-                undefined,
-                { appName: "Rose Griffon" },
-              );
+              const user = await context?.context.internalAdapter.findUserById(session.userId);
+              if (!user) return;
+              await ensureUserProfile(user, undefined, { appName: "Rose Griffon" });
             } catch (error) {
               console.error("[auth] session profile sync failed", error);
             }

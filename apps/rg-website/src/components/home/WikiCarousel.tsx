@@ -77,9 +77,9 @@ const WIKI_SECTIONS: Array<{
     title: "Comparateur",
   },
   {
-    description: "Chroniques et actualités du bouquet",
+    description: "Les Chroniques du Bouquet de l'association",
     gradientColors: "bg-linear-to-r from-slate-600 to-gray-500",
-    href: "/news?format=chronique",
+    href: "/chroniques",
     icon: "newspaper",
     title: "Chroniques",
   },

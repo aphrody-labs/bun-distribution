@@ -36,7 +36,7 @@ const packages = (JSON.parse(metadata.stdout).packages as Package[])
   .filter(pkg => pkg.name.startsWith("aphrody-nie-"))
   .sort((a, b) => a.name.localeCompare(b.name));
 
-const browser = ["aphrody-nie-wasm", "aphrody-nie-viewer-web"];
+const browser = ["aphrody-nie-wasm"];
 const emscripten = "aphrody-nie-lua-web";
 const featureBuilds: Record<string, string> = {
   "aphrody-nie-bevy": "bevy",

@@ -31,6 +31,8 @@ const ROUTES: Array<{
   { path: "/projets/outils/pfp", priority: 0.6, changeFrequency: "monthly" },
   { path: "/evenements", priority: 0.8, changeFrequency: "weekly" },
   { path: "/news", priority: 0.9, changeFrequency: "daily" },
+  { path: "/chroniques", priority: 0.8, changeFrequency: "weekly" },
+  { path: "/posts-x", priority: 0.6, changeFrequency: "daily" },
   // Remontée à la racine depuis la fusion d'`apps/azalee` (l'ancien plan de
   // site du wiki l'annonçait sous `/search`, chemin qui n'existe plus).
   { path: "/search", priority: 0.5, changeFrequency: "weekly" },
@@ -60,14 +62,12 @@ const ROUTES: Array<{
   { path: "/legal/confidentialite", priority: 0.3, changeFrequency: "yearly" },
 ];
 
-type ChroniqueRow = { slug: string; updated_at: string | null; published_at: string | null };
+type ChroniqueRow = { slug: string; app: string; updated_at: string | null; published_at: string | null };
 
 /**
- * TOUS les articles publiés, les deux corpus confondus.
- *
- * Le plan de site n'annonçait que les chroniques (`app = 'website'`) : les
- * actualités d'Azalée, pourtant servies sous `/news/<slug>`, n'y figuraient
- * pas. Depuis la fusion du fil, une seule requête les couvre.
+ * TOUS les articles publiés, chacun sous l'adresse de son corpus : le journal
+ * d'Azalée (`app = 'azalee'`) sous `/news/<slug>`, les Chroniques du Bouquet
+ * (`app = 'website'`) sous `/chroniques/<slug>`.
  *
  * Lecture Postgres directe (cf. `lib/db/pg.ts`) : le plan de site ne doit pas
  * dépendre de la disponibilité du Data API. Une erreur n'annule pas le plan —
@@ -77,13 +77,13 @@ async function articlesPublies(baseUrl: string): Promise<MetadataRoute.Sitemap> 
   try {
     const pool = getPgPool();
     const { rows } = await pool.query<ChroniqueRow>(
-      "SELECT slug, updated_at, published_at FROM articles WHERE status = $1 AND app = ANY($2::text[]) ORDER BY published_at DESC NULLS LAST",
+      "SELECT slug, app, updated_at, published_at FROM articles WHERE status = $1 AND app = ANY($2::text[]) ORDER BY published_at DESC NULLS LAST",
       ["published", ["azalee", "website"]],
     );
     return rows
       .filter(row => row.slug)
       .map(row => ({
-        url: `${baseUrl}/news/${row.slug}`,
+        url: `${baseUrl}${row.app === "website" ? "/chroniques" : "/news"}/${row.slug}`,
         lastModified: new Date(row.updated_at || row.published_at || Date.now()),
         changeFrequency: "monthly" as const,
         priority: 0.7,

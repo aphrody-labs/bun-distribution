@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Freely redistributable homebrew and test ROMs shipped by vendored emulator sources. bep never fetches commercial games.",
+  "note": "Freely redistributable homebrew and test ROMs, from vendored emulator sources or upstream open-source releases (pinned by sha256). bep never fetches commercial games, keys or firmware.",
   "packs": [
     {
       "id": "tetanes-homebrew",
@@ -25,6 +25,33 @@
       "source": "vendor/rustboyadvance-ng",
       "glob": "external/gba-tests/**/*.gba",
       "license": "jsmolka/gba-tests (MIT), nested in RustBoyAdvance-NG"
+    },
+    {
+      "id": "nx-hbmenu",
+      "console": "nintendo-switch",
+      "kind": "homebrew",
+      "url": "https://github.com/switchbrew/nx-hbmenu/releases/download/v3.6.1/nx-hbmenu_v3.6.1.zip",
+      "sha256": "4790c58fdd75c4bcc644fa8135fa11c380cb3ebaf685e400e336031972410ee7",
+      "glob": "*.nro",
+      "license": "ISC, switchbrew/nx-hbmenu v3.6.1 (libnx homebrew menu, software-rendered framebuffer)"
+    },
+    {
+      "id": "fbi",
+      "console": "nintendo-3ds",
+      "kind": "homebrew",
+      "url": "https://github.com/Steveice10/FBI/releases/download/2.6.1/FBI.3dsx",
+      "sha256": "634f0bfdca5506e14b1dd706541eefff30d9d083ab1a7bfe2bf40ae73004e3fa",
+      "glob": "*.3dsx",
+      "license": "MIT, Steveice10/FBI 2.6.1 (libctru/citro3d title manager)"
+    },
+    {
+      "id": "fbi-cia",
+      "console": "nintendo-3ds",
+      "kind": "homebrew",
+      "url": "https://github.com/Steveice10/FBI/releases/download/2.6.1/FBI.cia",
+      "sha256": "09b535826caa9b04a682ec07e0df605b5d8774af35b4dd77955e6c913df1a48b",
+      "glob": "*.cia",
+      "license": "MIT, Steveice10/FBI 2.6.1 (NoCrypto CIA)"
     }
   ]
 }

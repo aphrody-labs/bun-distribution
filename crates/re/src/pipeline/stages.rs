@@ -10,6 +10,7 @@ use super::emit_c::emit_c;
 use super::emit_rust::emit_rust;
 use super::image::Image;
 use super::lift::{LiftOptions, lift_image};
+use super::recomp;
 use super::registry::{AdapterInfo, AdapterKind, AdapterStatus, Ctx, Options, StageAdapter, handles_input, report};
 use super::util::{artifact, run_cmd, sha256_hex, tail, which};
 use crate::android::{AndroidContainer, AndroidContainerType};
@@ -56,7 +57,7 @@ fn always(_: &Ctx) -> bool {
 }
 
 fn has_ir(c: &Ctx) -> bool {
-    c.ir.is_some()
+    c.ir.as_ref().is_some_and(|m| m.abi.as_ref().is_none_or(|a| a.machine.is_none()))
 }
 
 fn is_aarch64(c: &Ctx) -> bool {
@@ -67,7 +68,7 @@ fn is_aarch64(c: &Ctx) -> bool {
 }
 
 fn liftable(c: &Ctx) -> bool {
-    c.payload.is_some() && c.payload_ident.as_ref().is_some_and(|i| i.liftable) && !is_aarch64(c)
+    c.payload.is_some() && c.payload_ident.as_ref().is_some_and(|i| i.liftable) && !is_aarch64(c) && super::recomp::machine_of(c).is_none()
 }
 
 fn liftable_aarch64(c: &Ctx) -> bool {
@@ -87,11 +88,17 @@ pub fn builtins() -> Vec<Box<dyn StageAdapter>> {
         b("triage", Stage::Analyze, &["*"], |c| c.payload.is_some(), analyze),
         b("x86-lift", Stage::Lift, &["pe", "elf"], liftable, lift),
         b("aarch64-lift", Stage::Lift, &["pe", "elf"], liftable_aarch64, lift_aarch64),
+        b("armv4t-lift", Stage::Lift, &["gba"], recomp::applies_gba, recomp::lift_gba),
+        b("r3000a-lift", Stage::Lift, &["ps1"], recomp::applies_psx, recomp::lift_psx),
+        b("6502-lift", Stage::Lift, &["nes"], recomp::applies_nes, recomp::lift_nes),
+        b("emit-console-rust", Stage::Decompile, &["gba", "ps1", "nes"], recomp::has_guest_ir, recomp::emit),
         b("emit-c", Stage::Decompile, &["pe", "elf"], has_ir, emit_c_stage),
         b("emit-rust", Stage::Decompile, &["pe"], |c| c.ir.as_ref().is_some_and(|m| m.format == "pe" && m.abi.is_none()), emit_rust_stage),
         b("clang-c", Stage::Rebuild, &["pe", "elf"], |c| c.c_dir.is_some(), rebuild_c),
         b("rustc-lib", Stage::Rebuild, &["pe"], |c| c.rust_file.is_some(), rebuild_rust),
+        b("cargo-recompile", Stage::Rebuild, &["gba", "ps1", "nes"], recomp::wants_build, recomp::build),
         b("lift-verify", Stage::Verify, &["pe", "elf"], has_ir, verify),
+        b("recompile-verify", Stage::Verify, &["gba", "ps1", "nes"], recomp::built, recomp::verify),
     ]
 }
 

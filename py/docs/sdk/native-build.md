@@ -9,9 +9,9 @@ edition 2024.
 
 ## One owner for the Rust source
 
-The extension is the workspace crate [`crates/ai/rag-python`](../../../crates/ai/rag-python)
+The extension is the workspace crate [`crates/aphrody-rust`](../../../crates/aphrody-rust)
 (package `aphrody-rust`, library `aphrody_rust`), which depends on
-[`crates/ai/rag-core`](../../../crates/aphrody-rag-core) for `fusion`, `vectors_f64` and
+[`crates/aphrody-rag-core`](../../../crates/aphrody-rag-core) for `fusion`, `vectors_f64` and
 `vectors_f32`. Until 2026-10-05 a second crate with the same name lived in
 `packages/aphrody/native`, fed by a pinned source archive (`source.json`,
 `source.tar.gz`) and a verifying PEP 517 wrapper (`build_backend.py`). That projection
@@ -60,7 +60,7 @@ consumer tests compare the installed wheel against the prior NumPy arithmetic.
 
 ## Changing the extension
 
-Edit `crates/ai/rag-python` or `crates/ai/rag-core` directly, keep `aphrody_rust.pyi`
+Edit `crates/aphrody-rust` or `crates/aphrody-rag-core` directly, keep `aphrody_rust.pyi`
 (the PEP 561 stubs next to the package) in step with the exported functions, run the Rust
 gates, then rebuild and verify the wheel with `tools/sdk/verify-wheel.py`. No generated
 Rust source exists in this package any more.

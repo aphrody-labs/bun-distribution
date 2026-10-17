@@ -169,12 +169,6 @@ const nextConfig: NextConfig = {
       // (200 puis bascule côté client) : un moteur d'indexation voit une
       // page qui existe encore, et le jus des anciennes URL n'est pas
       // transféré. Celles-ci sont indexées : il leur faut un vrai 308.
-      // Le fil est unifié sous `/news` : `/chroniques` n'était pas un second
-      // journal mais un second CORPUS du même, avec sa liste, sa page
-      // d'article et son entrée de menu. Les slugs sont uniques sur toute la
-      // table : une chronique se sert telle quelle sous `/news/<slug>`.
-      { destination: "/news?format=chronique", permanent: true, source: "/chroniques" },
-      { destination: "/news/:slug", permanent: true, source: "/chroniques/:slug" },
       // UNE SEULE PAGE DE CONNEXION.
       // `/achillea/auth` proposait un second écran « Connexion Discord »
       // pour le même compte Discord : depuis que la session e-sport dérive

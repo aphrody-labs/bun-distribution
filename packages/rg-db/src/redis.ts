@@ -65,11 +65,35 @@ export function resetRedisClient(): void {
  * ─── CACHE UTILITIES ──────────────────────────────────────────────────────────
  * Cache wrapper pour éviter la saturation de la base de données (Supabase).
  */
+/**
+ * Sans `REDIS_URL`, le cache vit dans la mémoire du processus.
+ *
+ * Le site auto-hébergé tourne en une seule instance sans Redis : chaque lecture
+ * tentait alors `127.0.0.1:6379`, échouait après dix reconnexions et perdait
+ * la valeur (le panier de la boutique notamment).
+ */
+const memoire = new Map<string, { value: string; expiresAt: number }>();
+const redisConfigure = () => Boolean(process.env.REDIS_URL);
+
+function lireMemoire(key: string): string | null {
+  const entry = memoire.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    memoire.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
 export const cache = {
   /**
    * Récupère une valeur typée du cache.
    */
   async get<T>(key: string): Promise<T | null> {
+    if (!redisConfigure()) {
+      const data = lireMemoire(key);
+      return data === null ? null : (JSON.parse(data) as T);
+    }
     const redis = getRedisClient();
     try {
       const data = await redis.get(key);
@@ -86,6 +110,10 @@ export const cache = {
    * Enregistre une valeur dans le cache avec un TTL en secondes.
    */
   async set<T>(key: string, value: T, ttlSeconds = 3600): Promise<boolean> {
+    if (!redisConfigure()) {
+      memoire.set(key, { value: JSON.stringify(value), expiresAt: Date.now() + ttlSeconds * 1000 });
+      return true;
+    }
     const redis = getRedisClient();
     try {
       const serialized = JSON.stringify(value);
@@ -102,6 +130,10 @@ export const cache = {
    * Invalide une clé de cache.
    */
   async del(key: string): Promise<boolean> {
+    if (!redisConfigure()) {
+      memoire.delete(key);
+      return true;
+    }
     const redis = getRedisClient();
     try {
       await redis.del(key);

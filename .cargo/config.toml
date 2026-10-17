@@ -9,3 +9,7 @@ root = "install"
 [resolver]
 # Prefer the newest compatible versions; the MSRV fallback picked windows 0.54 for gpu-allocator and broke wgpu DX12.
 incompatible-rust-versions = "allow"
+
+[env]
+# Directory with the browser.rs and gpu.rs providers included by the Bun-owned yolo-runtime crate.
+YOLO_EXT_DIR = { value = "crates/yolo-runtime/ext", relative = true }

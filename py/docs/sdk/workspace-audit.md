@@ -2,14 +2,14 @@
 # Current Python workspace contracts
 
 The workspace has seven installable distributions. `packages/aphrody` owns the
-library and the Python side of the native ABI (the Rust crate is `crates/ai/rag-python`), `packages/cli` owns the optional Python CLI,
+library and the Python side of the native ABI (the Rust crate is `crates/aphrody-rust`), `packages/cli` owns the optional Python CLI,
 `apps/meetings` owns the meeting application, and the other four packages own
 training, embedding fixtures, Koharu model export and the OCR service.
 
 Every distribution uses `src/`, carries its license and `py.typed`, and is
 built and installed outside the source tree by
 `python tools/packaging/modernize_workspace.py check`. The SDK wheel is built from the monorepo
-crate `crates/ai/rag-python` and its CycloneDX SBOM is verified.
+crate `crates/aphrody-rust` and its CycloneDX SBOM is verified.
 CLI tests live with the CLI; the two Infra pruning tests are part of root CI.
 
 The root owns Ruff, formatting, pytest and mypy configuration. Historical

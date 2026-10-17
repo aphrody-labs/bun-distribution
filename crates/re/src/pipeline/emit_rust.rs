@@ -357,7 +357,7 @@ impl Em<'_> {
             IrOp::Ret { pop } => {
                 format!("{{ c.r[RSP] = c.r[RSP].wrapping_add({}); return; }}", u32::from(word) + u32::from(*pop))
             }
-            IrOp::Unlifted { .. } => format!("{{ c.trap_at(0x{a:x}); return; }}"),
+            IrOp::Unlifted { .. } | IrOp::Guest(_) => format!("{{ c.trap_at(0x{a:x}); return; }}"),
         };
         if !s.is_empty() {
             let _ = writeln!(out, "                {s}");

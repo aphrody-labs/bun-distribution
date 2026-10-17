@@ -4,7 +4,7 @@
 The Linux SDK qualification (`modernize_workspace.py linux-sdk --python VERSION`, Python
 3.11, 3.12, 3.13 and 3.14) builds the `aphrody` wheel from the Aphrody monorepo checkout
 into temporary storage with `uv build --wheel`; the native extension is the workspace crate
-`crates/ai/rag-python`, so the build needs Cargo and runs on the serialized build host. No
+`crates/aphrody-rust`, so the build needs Cargo and runs on the serialized build host. No
 source archive is built or rebuilt for `aphrody`: its Rust source lives outside the package
 directory (see [native build](native-build.md)). Runtime dependencies resolve from published
 package metadata; the root workspace environment and its optional training packages are not

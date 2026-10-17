@@ -42,7 +42,7 @@ for (const { page, fallback } of pages) {
     expect(source).not.toContain('demande.startsWith("/")');
     expect(source).toContain("authClient.twoFactor.verifyTotp({");
     expect(source).toContain("trustDevice: appareilDeConfiance");
-    expect(source).toContain("authClient.twoFactor.verifyBackupCode({ code })");
+    expect(source).toMatch(/authClient\.twoFactor\.verifyBackupCode\(\{\s*code,?\s*\}\)/);
     expect(source).toContain('error.message ?? "Code refusé."');
     expect(source).toContain('error.message ?? "Code de secours refusé."');
     expect(source).toContain("router.push(destination)");

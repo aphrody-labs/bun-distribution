@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -15,7 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getArticleSeries } from "@/app/actions/article-series";
 import { getRelatedArticles } from "@/app/actions/articles";
 import { getBookmarkStates } from "@/app/actions/bookmarks";
@@ -42,10 +40,46 @@ import { getPgPoolOrNull } from "@/lib/db/pg";
 import { extractTableOfContents } from "@/lib/lexical-utils";
 import { absoluteUrl } from "@/lib/site-url";
 
-interface ArticlePageProps {
+export interface ArticlePageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
+
+/**
+ * Corpus servi par une route d'article.
+ *
+ * `/news` publie le journal d'Azalée (`app = 'azalee'`) et `/chroniques` les
+ * Chroniques du Bouquet de l'association (`app = 'website'`). Les deux routes
+ * partagent ce rendu ; chacune ne sert QUE son corpus et renvoie l'autre vers
+ * sa propre adresse, pour qu'un article n'ait qu'une URL canonique.
+ */
+export interface ArticleScope {
+  apps: readonly string[];
+  basePath: "/news" | "/chroniques";
+  backLabel: string;
+  brand: string;
+  siteName: string;
+  /** Corpus voisin vers lequel rediriger un slug qui n'appartient pas à celui-ci. */
+  other: { apps: readonly string[]; basePath: "/news" | "/chroniques" };
+}
+
+export const AZALEE_ARTICLES: ArticleScope = {
+  apps: ["azalee"],
+  backLabel: "Actualités",
+  basePath: "/news",
+  brand: "Azalée",
+  other: { apps: ["website"], basePath: "/chroniques" },
+  siteName: "Azalée - Rose Griffon",
+};
+
+export const CHRONIQUES_DU_BOUQUET: ArticleScope = {
+  apps: ["website"],
+  backLabel: "Chroniques du Bouquet",
+  basePath: "/chroniques",
+  brand: "Rose Griffon",
+  other: { apps: ["azalee"], basePath: "/news" },
+  siteName: "Chroniques du Bouquet - Rose Griffon",
+};
 
 const CATEGORY_LABELS: Record<string, string> = {
   announcement: "Annonce",
@@ -103,11 +137,10 @@ function estimateReadTime(content: string): number {
   return Math.max(1, Math.ceil(stripped.split(/\s+/).length / 300));
 }
 
-async function getNews(slug: string, isPreview = false) {
-  // `slug` est UNIQUE sur toute la table, tous corpus confondus : la page sert
-  // donc aussi bien une actualité Azalée qu'une chronique de l'association,
-  // depuis que `/chroniques` a fusionné ici.
-  const params: unknown[] = [slug, ["azalee", "website"]];
+async function getNews(slug: string, isPreview: boolean, apps: readonly string[]) {
+  // `slug` est UNIQUE sur toute la table, tous corpus confondus : le filtre
+  // `app` choisit le corpus servi par la route appelante.
+  const params: unknown[] = [slug, [...apps]];
   let sql = "SELECT * FROM articles WHERE slug = $1 AND app = ANY($2::text[])";
   if (!isPreview) {
     params.push("published");
@@ -201,13 +234,13 @@ async function getNews(slug: string, isPreview = false) {
  * (le JSON Lexical peut peser plusieurs centaines de Ko et n'est pas utilisé
  * pour produire les balises meta/OpenGraph).
  */
-async function getNewsMeta(slug: string, isPreview = false) {
+async function getNewsMeta(slug: string, isPreview: boolean, apps: readonly string[]) {
   const pool = getPgPoolOrNull();
   if (!pool) {
     return null;
   }
 
-  const params: unknown[] = [slug, ["azalee", "website"]];
+  const params: unknown[] = [slug, [...apps]];
   let sql =
     "SELECT id, slug, title, excerpt, meta_title, meta_description, featured_image_url, featured_image_alt, status, category, published_at, updated_at, created_at, author_id FROM articles WHERE slug = $1 AND app = ANY($2::text[])";
   if (!isPreview) {
@@ -287,17 +320,17 @@ async function isCurrentUserAdmin(): Promise<boolean> {
   }
 }
 
-export async function generateMetadata({
-  params,
-  searchParams,
-}: ArticlePageProps) {
+export async function generateArticleMetadata(
+  { params, searchParams }: ArticlePageProps,
+  scope: ArticleScope,
+) {
   const { slug } = await params;
   const sp = await searchParams;
   const isPreview = sp.preview === "true";
   const canPreview = isPreview ? await isCurrentUserAdmin() : false;
-  const news = await getNewsMeta(slug, canPreview);
+  const news = await getNewsMeta(slug, canPreview, scope.apps);
   if (!news) {
-    return { title: "Article introuvable - Azalee" };
+    return { title: `Article introuvable - ${scope.brand}` };
   }
 
   const seoTitle = news.meta_title || news.title;
@@ -312,7 +345,7 @@ export async function generateMetadata({
   // `app/sitemap.ts`) ; azalee.rosegriffon.fr ne sert plus /news depuis la
   // fusion de l'app Azalée. Un canonical vers un autre domaine que celui qui
   // répond demande explicitement à Google de désindexer la page réelle.
-  const canonicalUrl = absoluteUrl(`/news/${slug}`);
+  const canonicalUrl = absoluteUrl(`${scope.basePath}/${slug}`);
 
   return {
     alternates: { canonical: canonicalUrl },
@@ -333,13 +366,13 @@ export async function generateMetadata({
       locale: "fr_FR",
       modifiedTime: modifiedDate,
       publishedTime: publishedDate,
-      siteName: "Azalée - Rose Griffon",
+      siteName: scope.siteName,
       title: seoTitle,
       type: "article",
       url: canonicalUrl,
     },
     robots: { follow: true, index: news.status === "published" },
-    title: `${seoTitle} - Azalee`,
+    title: `${seoTitle} - ${scope.brand}`,
     twitter: {
       card: news.featured_image_url
         ? "summary_large_image"
@@ -351,16 +384,18 @@ export async function generateMetadata({
   };
 }
 
-export default async function ArticlePage({
-  params,
-  searchParams,
-}: ArticlePageProps) {
+export async function renderArticlePage({ params, searchParams }: ArticlePageProps, scope: ArticleScope) {
   const { slug } = await params;
   const sp = await searchParams;
   const isPreview = sp.preview === "true";
   const canPreview = isPreview ? await isCurrentUserAdmin() : false;
-  const news = await getNews(slug, canPreview);
+  const news = await getNews(slug, canPreview, scope.apps);
   if (!news) {
+    // Un slug de l'autre corpus garde une seule adresse publique.
+    const ailleurs = await getNewsMeta(slug, canPreview, scope.other.apps);
+    if (ailleurs) {
+      permanentRedirect(`${scope.other.basePath}/${encodeURIComponent(slug)}${isPreview ? "?preview=true" : ""}`);
+    }
     notFound();
   }
 
@@ -369,8 +404,8 @@ export default async function ArticlePage({
   const categoryLabel = news.category
     ? CATEGORY_LABELS[news.category] || news.category
     : "Article";
-  const authorName = news.author?.full_name || "Azalée";
-  const canonicalUrl = `https://azalee.rosegriffon.fr/news/${slug}`;
+  const authorName = news.author?.full_name || scope.brand;
+  const canonicalUrl = absoluteUrl(`${scope.basePath}/${slug}`);
   const tocItems = extractTableOfContents(news.content || "");
 
   const [
@@ -410,7 +445,7 @@ export default async function ArticlePage({
         "@type": "ImageObject",
         url: "https://azalee.rosegriffon.fr/icon.webp",
       },
-      name: "Azalée - Rose Griffon",
+      name: scope.siteName,
     },
   };
 
@@ -420,8 +455,8 @@ export default async function ArticlePage({
     itemListElement: [
       {
         "@type": "ListItem",
-        item: "https://azalee.rosegriffon.fr/news",
-        name: "Actualités",
+        item: absoluteUrl(scope.basePath),
+        name: scope.backLabel,
         position: 1,
       },
       {
@@ -517,12 +552,12 @@ export default async function ArticlePage({
             {/* Back button — always visible on image */}
             <div className="absolute top-3 left-3 sm:top-6 sm:left-6 z-10">
               <Link
-                href="/news"
+                href={scope.basePath}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium
                   bg-black/30 backdrop-blur-md text-white/90 hover:bg-black/50 transition-colors"
               >
                 <ChevronLeft className="size-4" />
-                <span className="hidden sm:inline">Actualités</span>
+                <span className="hidden sm:inline">{scope.backLabel}</span>
               </Link>
             </div>
 

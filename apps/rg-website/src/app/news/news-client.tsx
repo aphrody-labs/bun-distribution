@@ -41,7 +41,8 @@ export interface FeedItem {
 
 const ITEMS_PER_PAGE = 12;
 
-function TweetPost({ item }: { item: FeedItem }) {
+/** Carte d'un post X ; `basePath` choisit la route du compte (`/news/tweet` pour Azalée, `/posts-x` pour Rose Griffon). */
+export function TweetPost({ item, basePath = "/news/tweet" }: { item: FeedItem; basePath?: string }) {
   const { language } = useLanguage();
   const date = new Date(item.date);
 
@@ -54,7 +55,7 @@ function TweetPost({ item }: { item: FeedItem }) {
   };
 
   const safeSlug = cleanSlug(item.slug);
-  const href = `/news/tweet/${safeSlug}`;
+  const href = `${basePath}/${safeSlug}`;
 
   const getDateLocale = () => {
     switch (language) {

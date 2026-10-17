@@ -21,6 +21,9 @@ use super::cert_store::CertStore;
 use super::ssl_backend::{
     SslConnectionBackend, RESULT_INTERNAL_ERROR, RESULT_INVALID_SOCKET, RESULT_NO_SOCKET,
 };
+#[cfg(not(feature = "openssl"))]
+use super::ssl_backend_none::create_ssl_connection_backend;
+#[cfg(feature = "openssl")]
 use super::ssl_backend_openssl::create_ssl_connection_backend;
 use super::ssl_types::CaCertificateId;
 

@@ -21,7 +21,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub fn abi() -> Abi {
     let mut regs: Vec<String> = (0..=30).map(|i| format!("x{i}")).collect();
     regs.push("sp".into());
-    Abi { regs, link: "x30".into(), sp: "sp".into(), ret: "x0".into() }
+    Abi { regs, link: "x30".into(), sp: "sp".into(), ret: "x0".into(), machine: None, flags: Vec::new(), isas: Vec::new() }
 }
 
 /// Control-flow class of a decoded instruction.
@@ -644,7 +644,7 @@ fn lift_function(img: &Image, start: u64, known: &BTreeSet<u64>, max_insns: usiz
         blk.fallthrough = if prev_term { None } else { Some(addr + 4) };
     }
     let name = img.symbols.get(&start).cloned();
-    (IrFunction { addr: start, name, blocks, truncated }, calls)
+    (IrFunction { addr: start, name, blocks, truncated, isa: 0 }, calls)
 }
 
 /// Lift every function reachable from the entry point and function symbols.

@@ -18,7 +18,7 @@ with `crates/re`, rea and Replica.
 
 ## Features
 
-`window`, `nds`, `host` (`bevy-web` for wasm), `nes`, `gba`, `psx`, `arm`, `x86`, `wii`, `cartridge`. Consumers take
+`window`, `nds`, `host` (`bevy-web` for wasm), `nes`, `gba`, `psx`, `arm`, `x86`, `wii`, `ctr` (3DS), `switch`, `cartridge`. Consumers take
 `bun-engine` from the workspace with `default-features = false` and enable what they share.
 
 ## Machines
@@ -32,8 +32,9 @@ with `crates/re`, rea and Replica.
 | ARM firmware | `rdynarmic` A64 JIT, QEMU `virt` map (RAM 0x4000_0000, PL011) | runs EL0 code: `bun-engine run arm <image>` |
 | x86 guests | Windows Hypervisor Platform partition, COM1 | runs flat images: `bun-engine run x86 <image>`; Linux 64-bit boot in progress |
 | GameCube / Wii | `aphrody-wii-runtime` (Gekko/Broadway interpreter, DOL direct boot, XFB readback) | runs: `bun-engine run gc|wii <dol>`; GX scenes need the GPU renderer |
-| Switch | `ruzu`, `rdynarmic`, `aphrody-switch` | in tree, not yet a machine |
-| Other Rust cores | `vendor/{starpsx,zakuro,gopher64,jgenesis,rustboyadvance-ng,tetanes,retroboy}` | pinned in the console catalog |
+| Nintendo 3DS | `vendor/zakuro` (HLE kernel and services, software PICA renderer), feature `ctr` | runs: `bun-engine run 3ds <3dsx|cia|cxi|cci>`; `.3dsx` is relocated and wrapped in a NoCrypto CXI (RomFS included); FBI 2.6.1 (MIT) CIA and 3DSX reach the main menu on both screens |
+| Switch | SWITCH_ROW |
+| Other Rust cores | `vendor/{gopher64,jgenesis,retroboy}` | pinned in the console catalog |
 | C++ cores | `vendor/{ares,mame,retroarch}` | pinned in the console catalog |
 
 ## Stack decisions

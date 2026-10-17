@@ -138,7 +138,7 @@
  * `.dark` : sans `azalee-dark`, les utilitaires `dark:bg-…` resteraient inertes
  * et les surfaces codées en dur (bg-white, text-gray-900) trancheraient sur des
  * tokens devenus sombres. */
-@custom-variant dark (&:is(.dark, .dark *, .azalee-dark, .azalee-dark *, .theme-azalee-dark, .theme-azalee-dark *));
+@custom-variant dark (&:is(.dark, .dark *, .azalee-dark, .azalee-dark *, .theme-azalee-dark, .theme-azalee-dark *, .achillea, .achillea *, .theme-achillea, .theme-achillea *));
 
 @theme inline {
   --color-background: var(--background);

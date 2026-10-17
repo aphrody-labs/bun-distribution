@@ -3,7 +3,7 @@
 import { useResetState } from "@/hooks/use-reset-state";
 
 import { createIntlFormatters, directionForLocale, type DateValue } from "@rosegriffon/i18n";
-import type { LocaleId } from "@rosegriffon/preferences";
+import { isLocaleId, type LocaleId } from "@rosegriffon/preferences";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 // Import default locale directly to prevent hydration mismatch and flash of keys
@@ -27,6 +27,23 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const DEFAULT_LANGUAGE: Language = "fr";
 const LANGUAGE_COOKIE = "rg-locale";
+
+/** Langue choisie sur cet appareil : le cookie d'abord (lu aussi par le serveur), puis le stockage local. */
+function readStoredLanguage(): Language | null {
+  try {
+    const cookie = document.cookie.match(/(?:^|;\s*)rg-locale=([^;]+)/)?.[1];
+    if (cookie && isLocaleId(cookie)) return cookie;
+  } catch {
+    // Pas de cookie lisible : on essaie le stockage local.
+  }
+  try {
+    const stored = localStorage.getItem("app_language");
+    if (stored && isLocaleId(stored)) return stored;
+  } catch {
+    // Stockage indisponible : la langue initiale reste en place.
+  }
+  return null;
+}
 
 function persistLanguage(language: Language) {
   try {
@@ -60,6 +77,17 @@ export function LanguageProvider({
     setLanguageState(lang);
     persistLanguage(lang);
   };
+
+  // Les pages pré-rendues (ISR) sont générées sans cookie : leur langue initiale
+  // est toujours `fr`. Le choix enregistré sur l'appareil reprend la main dès
+  // le montage, sinon un membre anglophone retomberait en français à chaque page.
+  useEffect(() => {
+    const stored = readStoredLanguage();
+    if (!stored || stored === initialLanguage) return;
+    // Après la première peinture : le rendu d'hydratation doit rester celui du serveur.
+    const frame = requestAnimationFrame(() => setLanguageState(stored));
+    return () => cancelAnimationFrame(frame);
+  }, [initialLanguage]);
 
   // Le serveur initialise déjà lang/dir depuis le cookie et Accept-Language.
   // Cette synchronisation maintient le document juste lors d'un changement

@@ -34,6 +34,8 @@ pub struct Options {
     pub trace: bool,
     /// Timeout for external commands in seconds.
     pub timeout_secs: u64,
+    /// Static recompilation request (`bunre recompile`).
+    pub recompile: Option<super::recomp::Recompile>,
 }
 
 impl Options {
@@ -50,6 +52,7 @@ impl Options {
             external: false,
             trace: false,
             timeout_secs: 600,
+            recompile: None,
         }
     }
 }
@@ -94,6 +97,10 @@ pub struct Ctx {
     pub build: BuildState,
     /// Ghidra export directory.
     pub ghidra_out: Option<PathBuf>,
+    /// Console recompilation products.
+    pub guest: Option<super::recomp::GuestBuild>,
+    /// Images embedded in the recompiled crate.
+    pub guest_embed: Option<super::emit_guest::Embed>,
 }
 
 impl Ctx {
@@ -113,6 +120,8 @@ impl Ctx {
             image_bin: None,
             build: BuildState::default(),
             ghidra_out: None,
+            guest: None,
+            guest_embed: None,
         }
     }
 
@@ -323,6 +332,14 @@ impl StageAdapter for ExternalAdapter {
         }
     }
     fn applies(&self, ctx: &Ctx) -> bool {
+        // Carving unpackers have nothing to extract from an identified, non-container console
+        // cartridge or executable; the console lifters take it as is.
+        if self.stage == Stage::Unpack
+            && self.kind == AdapterKind::Command
+            && ctx.effective_ident().is_some_and(|i| i.kind == InputKind::Rom && !i.container)
+        {
+            return false;
+        }
         handles_input(self.handles, ctx.effective_ident(), ctx.opts.target)
     }
     fn run(&self, ctx: &mut Ctx) -> StageReport {

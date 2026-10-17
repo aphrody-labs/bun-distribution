@@ -219,51 +219,45 @@ export function cargoAndroidEnv(
   };
 }
 
-/** On Windows, host build scripts link with MSVC: import the vcvars64 environment when absent. */
+/**
+ * On Windows, host build scripts link with MSVC: import Bun's native
+ * `bun msvc env` environment when absent, pinned to the first toolset (default
+ * first, then newest) that ships the x64 CRT import libraries.
+ */
 export async function msvcEnv(): Promise<Record<string, string>> {
   if (!windows || process.env.VCINSTALLDIR) return {};
-  const vswhere = join(
-    process.env["ProgramFiles(x86)"] ?? "C:\\Program Files (x86)",
-    "Microsoft Visual Studio",
-    "Installer",
-    "vswhere.exe",
-  );
-  if (!existsSync(vswhere)) return {};
-  const root = (
-    await capture([
-      vswhere,
-      "-latest",
-      "-products",
-      "*",
-      "-property",
-      "installationPath",
-    ])
-  ).trim();
-  const vcvars = join(root, "VC", "Auxiliary", "Build", "vcvars64.bat");
-  if (!root || !existsSync(vcvars)) return {};
+  const listing = JSON.parse(
+    await capture([process.execPath, "msvc", "list", "--json"]),
+  ) as {
+    instances?: {
+      toolsets?: { version: string; dir: string; default?: boolean }[];
+    }[];
+  };
+  const toolset = (listing.instances ?? [])
+    .flatMap((instance) => instance.toolsets ?? [])
+    .sort(
+      (a, b) =>
+        Number(!!b.default) - Number(!!a.default) ||
+        b.version.localeCompare(a.version, undefined, { numeric: true }),
+    )
+    .find((candidate) =>
+      existsSync(join(candidate.dir, "lib", "x64", "msvcrt.lib")),
+    );
   const output = await capture([
-    "cmd",
-    "/d",
-    "/s",
-    "/c",
-    `call "${vcvars}" >nul && set`,
+    process.execPath,
+    "msvc",
+    "env",
+    ...(toolset ? ["--toolset", toolset.version] : []),
   ]);
-  return Object.fromEntries(
-    output
-      .split(String.fromCharCode(10))
-      .map((line) => line.trimEnd())
-      .map(
-        (line) =>
-          [
-            line.slice(0, line.indexOf("=")),
-            line.slice(line.indexOf("=") + 1),
-          ] as const,
-      )
-      .filter(([key]) => key.length > 0),
-  );
+  return JSON.parse(output) as Record<string, string>;
 }
 
-/** Build a cdylib crate for each ABI and copy `lib*.so` into `jniLibs/<abi>`. */
+/**
+ * Build a cdylib crate for each ABI and copy `lib*.so` into `jniLibs/<abi>`.
+ * Cargo runs through the workspace native admission owner (Windows mutex or
+ * flock), which serializes native builds across agents and pins the target
+ * directory to `<workspace>/target`.
+ */
 export async function buildNative(options: {
   workspace: string;
   crate: string;
@@ -275,37 +269,38 @@ export async function buildNative(options: {
 }): Promise<void> {
   const ndk = await ensureNdk(options.toolchain);
   const profile = options.profile ?? "release";
-  const serial = join(
-    options.workspace,
-    "scripts",
-    "aphrody",
-    "build",
-    "rust",
-    "cargo-serial.sh",
-  );
+  const { loadConfig, runNative } = await import("@aphrody/bun-workspace");
+  const config = await loadConfig(options.workspace);
   const host = await msvcEnv();
   for (const abi of options.abis) {
     const triple = TRIPLES[abi];
-    const cargo = existsSync(serial) ? ["bash", serial] : ["cargo"];
-    const args = [
-      ...cargo,
-      "build",
-      "-p",
-      options.crate,
-      "--target",
-      triple,
-      ...(profile === "release" ? ["--release"] : []),
-    ];
-    const code = await run(args, {
-      cwd: options.workspace,
-      env: { ...process.env, ...host, ...cargoAndroidEnv(ndk, triple) },
-    });
+    const code = await runNative(
+      config,
+      [
+        "cargo",
+        "build",
+        "--locked",
+        "-p",
+        options.crate,
+        "--target",
+        triple,
+        ...(profile === "release" ? ["--release"] : []),
+      ],
+      {
+        root: options.workspace,
+        cwd: options.workspace,
+        timeoutMs: 1_800_000,
+        runtimePolicy: "development",
+        env: { ...host, ...cargoAndroidEnv(ndk, triple) },
+      },
+    );
     if (code !== 0)
       throw new Error(
         `cargo build ${options.crate} for ${triple} failed (${code})`,
       );
     const built = join(
-      process.env.CARGO_TARGET_DIR ?? join(options.workspace, "target"),
+      options.workspace,
+      "target",
       triple,
       profile,
       `lib${options.library}.so`,

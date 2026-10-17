@@ -202,7 +202,7 @@ fn lift_function(ctx: &Ctx, start: u64, known: &BTreeSet<u64>, max_insns: usize)
         blk.fallthrough = if prev_term { None } else { Some(ins.next_ip()) };
     }
     let name = ctx.img.symbols.get(&start).cloned();
-    (IrFunction { addr: start, name, blocks, truncated }, calls)
+    (IrFunction { addr: start, name, blocks, truncated, isa: 0 }, calls)
 }
 
 fn canon(r: Register) -> Option<(String, u8, bool)> {

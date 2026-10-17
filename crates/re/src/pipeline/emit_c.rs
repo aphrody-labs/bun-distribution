@@ -383,6 +383,9 @@ impl Em<'_> {
             IrOp::Unlifted { reason } => {
                 format!("br_unlifted(c, 0x{addr_:x}ull, \"{}\"); /* {} */", cstr(text), cmt(reason))
             }
+            IrOp::Guest(_) => {
+                format!("br_unlifted(c, 0x{addr_:x}ull, \"{}\"); /* guest semantics: use the console emitter */", cstr(text))
+            }
         };
         let _ = writeln!(out, "    /* {addr_:x}: {} */", cmt(text));
         if !s.is_empty() {

@@ -8,6 +8,7 @@ pub mod ffi;
 #[cfg(feature = "host")]
 pub mod host;
 pub mod machine;
+pub mod recomp;
 #[cfg(feature = "window")]
 pub mod window;
 

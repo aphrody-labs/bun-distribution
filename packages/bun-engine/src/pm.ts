@@ -404,17 +404,43 @@ interface RomPack {
   id: string;
   console: string;
   kind: "homebrew" | "test";
-  source: string;
+  /** Vendored source checkout holding the images. */
+  source?: string;
+  /** Upstream release download, verified against `sha256`; archives are unpacked. */
+  url?: string;
+  sha256?: string;
   glob: string;
   license: string;
 }
 
-/** Free ROMs from vendored sources (`bep roms [console]`); checks out the source on demand. */
+/** Downloads a release pack into the bep cache once and returns its directory. */
+async function downloadPack(pack: RomPack): Promise<string> {
+  const dir = join(usrRoot(), "var", "cache", "bep", "roms", pack.id);
+  const name = basename(new URL(pack.url!).pathname);
+  if (existsSync(join(dir, name))) return dir;
+  const response = await fetch(pack.url!, { headers: { "user-agent": "bep" } });
+  if (!response.ok) throw new Error(`${pack.id}: download failed with ${response.status}`);
+  const bytes = await response.bytes();
+  const digest = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+  if (pack.sha256 && digest !== pack.sha256) throw new Error(`${pack.id}: sha256 ${digest} does not match the registry`);
+  if (/\.(zip|tar|tgz|tar\.gz)$/i.test(name)) await new Bun.Archive(bytes).extract(dir);
+  await Bun.write(join(dir, name), bytes);
+  return dir;
+}
+
+/** Free ROMs from vendored sources or upstream releases (`bep roms [console]`), fetched on demand. */
 export async function freeRoms(consoleName?: string): Promise<Array<{ pack: string; console: string; kind: string; path: string }>> {
   const file = join(import.meta.dir, "..", "plugins", "consoles", "roms.json");
   const { packs } = (await Bun.file(file).json()) as { packs: RomPack[] };
   const rows: Array<{ pack: string; console: string; kind: string; path: string }> = [];
   for (const pack of packs.filter(item => !consoleName || item.console === consoleName)) {
+    if (pack.url) {
+      const dir = await downloadPack(pack);
+      for await (const path of new Bun.Glob(pack.glob).scan({ cwd: dir, onlyFiles: true }))
+        rows.push({ pack: pack.id, console: pack.console, kind: pack.kind, path: join(dir, path) });
+      continue;
+    }
+    if (!pack.source) continue;
     const dir = join(repoRoot, pack.source);
     if (!existsSync(join(dir, ".git")))
       Bun.spawnSync(["git", "-C", repoRoot, "submodule", "update", "--init", "--recursive", "--depth", "1", "--", pack.source]);

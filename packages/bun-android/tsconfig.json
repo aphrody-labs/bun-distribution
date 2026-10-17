@@ -4,9 +4,10 @@
     "module": "Preserve",
     "moduleResolution": "bundler",
     "strict": true,
-    "types": ["bun"],
+    "types": ["@aphrody/bun-types"],
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "skipLibCheck": true
   },
   "include": ["src"]
 }

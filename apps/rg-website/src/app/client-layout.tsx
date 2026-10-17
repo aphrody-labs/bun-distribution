@@ -21,6 +21,7 @@ import EdgeSwipeDetector from "@/components/shared/EdgeSwipeDetector";
 import MobileWatermark from "@/components/shared/MobileWatermark";
 import { DynamicUniverseHead } from "@/components/layout/DynamicUniverseHead";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { LanguageAccountSync } from "@/components/providers/LanguageAccountSync";
 import { LanguageProvider, type Language, useLanguage } from "@/components/providers/language-provider";
 import { ProfileProvider, useProfile } from "@/contexts/profile-context";
 import { ThemeProvider } from "@/contexts/theme-context";
@@ -229,6 +230,7 @@ export default function ClientLayout({
         <AuthProvider>
           <ProfileProvider>
             <LanguageProvider initialLanguage={initialLanguage}>
+              <LanguageAccountSync />
               <AchilleaAuthProvider>
                 <SidebarWrapper isMedium={isMedium}>
                   {/* Gestionnaire dynamique de Favicon, Titre et SEO selon l'univers */}

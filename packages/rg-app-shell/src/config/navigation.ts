@@ -494,9 +494,11 @@ export function construireActualiteItems(): NavItem[] {
 /**
  * Menu de l'association.
  *
- * « Vie de la communauté » et « L'association » n'en font plus qu'UNE. Les
- * sous-projets (RGTV, IERGDay) sont regroupés sous « Projets ». Le doublon
- * de chroniques et la coquille inutile de la page association sont retirés.
+ * Toutes les pages de l'association y figurent : la vie de la communauté, ses
+ * deux fils de publication (les Chroniques du Bouquet et les posts X de Rose
+ * Griffon — distincts du journal d'Azalée rangé dans le wiki), ses projets, la
+ * présentation de l'association (statuts, adhésion, contact, charte,
+ * médiation), la boutique et le soutien.
  */
 export function construireAssociationItems(): NavItem[] {
   return [
@@ -506,6 +508,8 @@ export function construireAssociationItems(): NavItem[] {
     { emote: "gaelle-salut", icon: "groups", label: "nav.association.team", path: "/notre-equipe" },
     { icon: "event", label: "nav.association.events", path: "/evenements" },
     { icon: "how_to_vote", label: "nav.association.polls", path: "/sondages" },
+    { emote: "roy-pensif", icon: "auto_stories", label: "nav.association.chronicles", path: "/chroniques" },
+    { icon: "alternate_email", label: "nav.association.posts_x", path: "/posts-x" },
     {
       children: [
         {
@@ -549,6 +553,20 @@ export function construireAssociationItems(): NavItem[] {
       label: "nav.association.projects",
       path: "/projets",
     },
+    {
+      children: [
+        { icon: "info", label: "nav.association.about", path: "/a-propos" },
+        { icon: "person_add", label: "nav.association.join", path: "/a-propos/rejoindre-rg" },
+        { icon: "mail", label: "nav.association.contact", path: "/a-propos/contact" },
+        { icon: "handshake", label: "nav.association.charter", path: "/charte-engagements" },
+        { icon: "support_agent", label: "nav.association.mediation", path: "/cellule-de-mediation" },
+      ],
+      emote: "roy-salut",
+      icon: "diversity_3",
+      label: "nav.association.about_us",
+      path: "/a-propos",
+    },
+    { icon: "storefront", label: "nav.association.shop", path: "/shop" },
     {
       icon: "volunteer_activism",
       label: "nav.association.support",

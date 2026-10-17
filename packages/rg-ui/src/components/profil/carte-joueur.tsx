@@ -25,7 +25,7 @@
  * sans titre, le ruban n'est pas rendu. La carte ne montre jamais un
  * emplacement vide.
  */
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { AVAILABLE_BADGES } from "../../lib/badges-profil";
 import { urlBanniereAffichable } from "../../lib/galerie-cdn";
@@ -109,6 +109,18 @@ export function CarteJoueur({
       .filter((badge): badge is (typeof AVAILABLE_BADGES)[number] => badge !== undefined);
   }, [badges]);
 
+  // Un avatar Discord change de hash quand le membre en choisit un autre :
+  // l'`<img>` du rendu serveur peut avoir échoué avant l'hydratation, d'où la
+  // vérification au montage en plus de `onError`.
+  const [avatarEnEchec, setAvatarEnEchec] = useState<string | null>(null);
+  const surveillerAvatar = useCallback(
+    (img: HTMLImageElement | null) => {
+      if (img?.complete && img.naturalWidth === 0 && avatarUrl) setAvatarEnEchec(avatarUrl);
+    },
+    [avatarUrl],
+  );
+  const avatarAffiche = avatarUrl && avatarEnEchec !== avatarUrl ? avatarUrl : null;
+
   const nomAffiche = nom?.trim() || pseudo;
   const posteAffiche = poste ? POSTES[poste] : null;
   // Une bannière choisie avant l'arrivée du recadrage garde ses bandes noires
@@ -169,10 +181,12 @@ export function CarteJoueur({
 					    que les initiales), si bien que la photo restait absente du rendu
 					    serveur — et donc de tout aperçu de lien partagé. Ici l'image est
 					    dans le document dès la première réponse. */}
-          {avatarUrl ? (
+          {avatarAffiche ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={avatarUrl}
+              ref={surveillerAvatar}
+              onError={() => setAvatarEnEchec(avatarAffiche)}
+              src={avatarAffiche}
               alt={`Photo de profil de ${pseudo}`}
               className="size-20 shrink-0 rounded-full border-2 border-white/80 object-cover shadow-lg sm:size-28"
             />
