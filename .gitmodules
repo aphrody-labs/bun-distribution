@@ -603,3 +603,21 @@
 	path = vendor/kytyps5
 	url = https://github.com/aphrody-labs/kytyps5.git
 	shallow = true
+[submodule "vendor/cargo-3ds"]
+	path = vendor/cargo-3ds
+	url = https://github.com/rust3ds/cargo-3ds.git
+[submodule "vendor/citro3d-rs"]
+	path = vendor/citro3d-rs
+	url = https://github.com/rust3ds/citro3d-rs.git
+[submodule "vendor/kuriimu2"]
+	path = vendor/kuriimu2
+	url = https://github.com/FanTranslatorsInternational/Kuriimu2.git
+[submodule "vendor/spica"]
+	path = vendor/spica
+	url = https://github.com/gdkchan/SPICA.git
+[submodule "vendor/pk3ds"]
+	path = vendor/pk3ds
+	url = https://github.com/kwsch/pk3DS.git
+[submodule "vendor/tinke"]
+	path = vendor/tinke
+	url = https://github.com/pleonex/tinke.git
