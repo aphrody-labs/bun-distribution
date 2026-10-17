@@ -21,7 +21,6 @@ use crate::game::error::{ReError, Result};
 use crate::game::fs::cpk::CpkArchive;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
-#[cfg(not(target_arch = "wasm32"))]
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -43,20 +42,14 @@ pub struct CacheCpkStats {
 pub struct LoadedCpk {
     pub name: String,
     pub archive: CpkArchive,
-    #[cfg(not(target_arch = "wasm32"))]
     pub storage: CpkStorage,
-    #[cfg(target_arch = "wasm32")]
-    pub storage: Vec<u8>,
 }
 
 impl LoadedCpk {
     /// Archive bytes, whatever the storage of the target.
     #[inline]
     pub fn bytes(&self) -> &[u8] {
-        #[cfg(not(target_arch = "wasm32"))]
-        return self.storage.as_bytes();
-        #[cfg(target_arch = "wasm32")]
-        return &self.storage;
+        self.storage.as_bytes()
     }
 }
 
@@ -383,10 +376,7 @@ impl XenoverseVfs {
     /// Mounts an in-memory CPK buffer under a logical archive name.
     pub fn mount_cpk_memory(&mut self, name: &str, bytes: Vec<u8>) -> Result<usize> {
         let archive = CpkArchive::parse(&bytes)?;
-        #[cfg(not(target_arch = "wasm32"))]
         let storage = CpkStorage::Buffer(bytes);
-        #[cfg(target_arch = "wasm32")]
-        let storage = bytes;
 
         let loaded = Arc::new(LoadedCpk { name: name.to_string(), archive, storage });
 

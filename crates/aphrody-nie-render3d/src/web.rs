@@ -170,6 +170,7 @@ mod browser {
                     power_preference: wgpu::PowerPreference::HighPerformance,
                     force_fallback_adapter: false,
                     compatible_surface: Some(&surface),
+                    apply_limit_buckets: false,
                 },
             )
             .await
@@ -835,7 +836,7 @@ mod browser {
                 pass.draw(0..6, 0..1);
             }
             self.renderer.queue().submit(Some(encoder.finish()));
-            frame.present();
+            self.renderer.queue().present(frame);
             if reconfigure {
                 self.surface.configure(&device, &self.config);
             }

@@ -34,7 +34,7 @@ hub = ["wgsl", "native-backends", "dep:pollster", "dep:serde", "dep:serde_json"]
 cuda = ["hub", "dep:cudarc"]
 
 [dependencies]
-wgpu = { version = "30.0.1", default-features = false }
+wgpu = { version = "30.0.1", default-features = false, features = ["std"] }
 pollster = { version = "1.0.1", optional = true }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false, optional = true }
 serde_json = { version = "1.0.151", optional = true }
