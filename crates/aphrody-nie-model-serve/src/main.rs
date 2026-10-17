@@ -1753,7 +1753,7 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
         .ok_or_else(|| anyhow::anyhow!("type corporel {body_type_idx} sans tête de base"))?;
 
     // ── Tenue : CRC du haut, des chaussures, des gants ─────────────────────────
-    let db = state.db_path.as_deref().and_then(|db| resolve_uniform_crcs(db, code));
+    let db = state.db_path.as_ref().and_then(|db| resolve_uniform_crcs(db, code));
     let model_default = fiche.map_or(0, |r| r.uniform_crc);
     let uniform_crc = db.as_ref().map(|d| d.fielder).filter(|&c| c != 0).unwrap_or(model_default);
     let uniform_source = match (&db, uniform_crc) {
