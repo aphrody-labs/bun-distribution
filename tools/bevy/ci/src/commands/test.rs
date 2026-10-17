@@ -1,4 +1,4 @@
-use crate::{args::Args, Prepare, PreparedCommand};
+use crate::{Prepare, PreparedCommand, args::Args};
 use argh::FromArgs;
 use xshell::cmd;
 
@@ -35,7 +35,7 @@ impl Prepare for TestCommand {
                     "cargo test --workspace --benches {no_fail_fast...} {jobs...}"
                 ),
                 "Please fix failing tests in output above.",
-            )
+            ),
         ]
     }
 }

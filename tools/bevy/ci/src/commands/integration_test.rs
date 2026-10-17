@@ -1,4 +1,4 @@
-use crate::{args::Args, commands::get_integration_tests, Prepare, PreparedCommand};
+use crate::{Prepare, PreparedCommand, args::Args, commands::get_integration_tests};
 use argh::FromArgs;
 use xshell::cmd;
 

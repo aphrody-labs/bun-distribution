@@ -1,10 +1,10 @@
 use crate::{
+    Prepare, PreparedCommand,
     args::Args,
     commands::{
         BenchCheckCommand, CompileCheckCommand, CompileFailCommand, ExampleCheckCommand,
         IntegrationTestCheckCommand, TestCheckCommand,
     },
-    Prepare, PreparedCommand,
 };
 use argh::FromArgs;
 

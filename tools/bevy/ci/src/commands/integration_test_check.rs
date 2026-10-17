@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::{args::Args, Prepare, PreparedCommand};
+use crate::{Prepare, PreparedCommand, args::Args};
 use argh::FromArgs;
 use xshell::cmd;
 

@@ -1,6 +1,6 @@
 use std::{fs, io::Write, path::PathBuf};
 
-use miette::{diagnostic, Context, Diagnostic, IntoDiagnostic, NamedSource, Result};
+use miette::{Context, Diagnostic, IntoDiagnostic, NamedSource, Result, diagnostic};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyModifiers},
     prelude::*,
@@ -35,8 +35,8 @@ pub struct Content {
 impl Content {
     pub fn load() -> Result<Self> {
         // Bun OS layout: the release content lives in docs/bevy/release-content.
-        let content_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../docs/bevy/release-content");
+        let content_dir =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../docs/bevy/release-content");
 
         let release_notes_dir = content_dir.join("release-notes");
         let release_notes = load_content(release_notes_dir, "release note")?;
@@ -161,7 +161,14 @@ impl App {
         use Constraint::*;
 
         let page_area = frame.area().inner(Margin::new(1, 1));
-        let [header_area, instructions_area, _, block_area, _, typing_area] = Layout::vertical([
+        let [
+            header_area,
+            instructions_area,
+            _,
+            block_area,
+            _,
+            typing_area,
+        ] = Layout::vertical([
             Length(2), // header
             Length(2), // instructions
             Length(1), // gap
@@ -206,8 +213,7 @@ impl App {
     }
 
     fn instructions(&self) -> impl Widget {
-        let text =
-            "▲ ▼ : navigate    shift + ▲ ▼ : re-order    + : insert section    d : delete section    tab : change focus    esc : save and quit";
+        let text = "▲ ▼ : navigate    shift + ▲ ▼ : re-order    + : insert section    d : delete section    tab : change focus    esc : save and quit";
         Paragraph::new(text)
             .fg(Color::Magenta)
             .centered()

@@ -1,7 +1,7 @@
 use crate::{
+    Prepare, PreparedCommand,
     args::Args,
     commands::{DocCheckCommand, DocTestCommand},
-    Prepare, PreparedCommand,
 };
 use argh::FromArgs;
 

@@ -1,7 +1,7 @@
 use crate::{
+    Prepare, PreparedCommand,
     args::Args,
     commands::{ClippyCommand, FormatCommand},
-    Prepare, PreparedCommand,
 };
 use argh::FromArgs;
 
