@@ -87,19 +87,14 @@ export function CharacterSearchDialog({ open, onOpenChange, onSelect }: Characte
     }
 
     if (!canSearch) {
-
       const reset = setTimeout(() => {
-
         setResults([]);
 
         setIsSearching(false);
-
       }, 0);
 
       return () => clearTimeout(reset);
-
     }
-
 
     const pending = setTimeout(() => setIsSearching(true), 0);
     const timer = setTimeout(

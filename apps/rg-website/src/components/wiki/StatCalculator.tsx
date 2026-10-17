@@ -14,7 +14,7 @@ import { useResetState } from "@/hooks/use-reset-state";
  */
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { calculateStats, statCurve, type GrowthParams, type StatBlock } from "@/lib/nie-engine";
+import { calculateStats, statCurve, type GrowthParams, type StatBlock } from "@aphrody/nie-web/engine";
 
 /** Ordre + libellés FR des 7 stats (clés wasm kc/cr/tc/pr/ps/ag/it). */
 const STATS: ReadonlyArray<{ k: keyof StatBlock; fr: string }> = [

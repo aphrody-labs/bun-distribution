@@ -12,7 +12,7 @@ import { useResetState } from "@/hooks/use-reset-state";
  * (lv1/lv50/lv99) comme repère. Navigateur uniquement (wasm) : îlot `"use client"`.
  */
 import { useEffect, useMemo, useState } from "react";
-import { calculateStats, statCurve, type GrowthParams, type StatBlock } from "@/lib/nie-engine";
+import { calculateStats, statCurve, type GrowthParams, type StatBlock } from "@aphrody/nie-web/engine";
 import type { DemoData, DemoFormData } from "./types";
 
 /** Ordre + libellés FR des 7 stats (clés wasm) + clé du dossier pré-calculé. */

@@ -18,7 +18,7 @@ import init, {
   lua_bytecode_json,
   init_panic_hook,
   model_to_glb,
-} from "./nie-wasm-web/nie_wasm.js";
+} from "@aphrody/nie-web/wasm";
 
 /** URL same-origin du binaire wasm. */
 const WASM_URL = "/wasm/nie_wasm_bg.wasm?v=atlas-20260905";

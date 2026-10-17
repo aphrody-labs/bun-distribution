@@ -6,7 +6,7 @@
       "rootDir": "."
     }
   },
-  "ignorePatterns": ["src/lib/nie-wasm-web/**"],
+  "ignorePatterns": [],
   "rules": {
     "nextjs/no-img-element": "warn",
     "jsx-a11y/anchor-is-valid": "off",

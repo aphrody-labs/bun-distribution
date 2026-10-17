@@ -14,7 +14,7 @@
  */
 
 // Le glue ESM `--target web` est browser-safe (pas de `require('fs')`).
-import init, { init_panic_hook, parse_save_json } from "./nie-wasm-web/nie_wasm.js";
+import init, { init_panic_hook, parse_save_json } from "@aphrody/nie-web/wasm";
 
 // ---------------------------------------------------------------------------
 // Types du résumé (miroir de la sortie JSON de `parse_save_json`)

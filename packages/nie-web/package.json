@@ -17,6 +17,8 @@
   "exports": {
     "./engine": "./src/nie-engine.ts",
     "./game": "./src/nie-game.ts",
+    "./wasm": "./src/nie-wasm-web/nie_wasm.js",
+    "./wasm/nie_wasm_bg.wasm": "./src/nie-wasm-web/nie_wasm_bg.wasm",
     "./package.json": "./package.json"
   },
   "publishConfig": {

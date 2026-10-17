@@ -111,19 +111,14 @@ export function GlobalSearch({
     }
 
     if (query.length < 2) {
-
       const reset = setTimeout(() => {
-
         setResults([]);
 
         setIsSearching(false);
-
       }, 0);
 
       return () => clearTimeout(reset);
-
     }
-
 
     const pending = setTimeout(() => setIsSearching(true), 0);
 

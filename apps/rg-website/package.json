@@ -93,6 +93,7 @@
     "@rosegriffon/azalee": "workspace:*",
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/i18n": "workspace:*",
+    "@aphrody/nie-web": "workspace:*",
     "@rosegriffon/inagle": "workspace:*",
     "@rosegriffon/patreon-bun": "catalog:",
     "@rosegriffon/preferences": "workspace:*",

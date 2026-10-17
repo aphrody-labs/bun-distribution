@@ -392,6 +392,7 @@
       "version": "1.4.4",
       "dependencies": {
         "@aphrody/next-bun": "catalog:",
+        "@aphrody/nie-web": "workspace:*",
         "@aphrody/paths": "catalog:",
         "@base-ui/react": "catalog:",
         "@better-auth/passkey": "catalog:",
