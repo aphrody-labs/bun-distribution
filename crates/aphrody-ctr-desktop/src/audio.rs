@@ -75,7 +75,7 @@ impl Audio {
         let queue = Arc::new(Mutex::new(Queue {
             samples: VecDeque::new(),
             fraction: 0.0,
-            step: aphrody_ctr_emu::AUDIO_SAMPLE_RATE / f64::from(config.sample_rate),
+            step: aphrody_ctr_emu::AUDIO_SAMPLE_RATE / f64::from(config.sample_rate.0),
             last: [0.0; 2],
         }));
         let stream = match format {
