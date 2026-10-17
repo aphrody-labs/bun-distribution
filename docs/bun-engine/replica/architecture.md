@@ -25,8 +25,8 @@ their explicitly supplied paths.
 
 | Command | Output | Flow |
 | --- | --- | --- |
-| `bun-engine replica:nds ROM` | JSON intake report | F01 |
-| `bun-engine replica:init ROM [DIR]` | Atomic provenance/status artifacts | F01 |
+| `re replica nds ROM` | JSON intake report | F01 |
+| `re replica init ROM [DIR]` | Atomic provenance/status artifacts | F01 |
 | `bun run nds:tinke:build` | .NET 10 NativeAOT C ABI library | F02 |
 | Dust desktop build/run | Windows executable loading external ROM | F01 |
 | Dust Web build/server | Browser file-picker runtime | F02 |

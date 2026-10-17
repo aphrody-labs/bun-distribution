@@ -3,7 +3,6 @@ exclude = ["vendor/uutils", "packages/bun-tauri", "apps/aphrody-model-view", "to
 resolver = "3"
 members = [
   "crates/apkeep",
-  "crates/bun-emu",
   "crates/aphrody-google",
   "crates/aphrody-gemini-web",
   "crates/aphrody-gemini-runtime",
@@ -24,7 +23,6 @@ members = [
   "crates/aphrody-wii",
   "crates/aphrody-wii-image",
   "crates/bun-engine-core",
-  "crates/bun-engine-nds",
   "crates/ghidra-decompiler",
   "crates/aphrody-sprite-sheet",
   "crates/aphrody-softraster",
@@ -524,7 +522,6 @@ members = [
   "crates/aphrody-dust-wgpu",
   "crates/aphrody-emu-utils",
   "crates/aphrody-emu-utils-macros",
-  "crates/aphrody-emulator-host",
   "crates/aphrody-homebrew",
   "crates/aphrody-nie-app",
   "crates/aphrody-nie-asm",
@@ -536,7 +533,6 @@ members = [
   "crates/aphrody-nie-core",
   "crates/aphrody-nie-data",
   "crates/aphrody-nie-editor",
-  "crates/aphrody-nie-emu",
   "crates/aphrody-nie-explore",
   "crates/aphrody-nie-ffi",
   "crates/aphrody-nie-forge",
@@ -843,7 +839,7 @@ ahash = "0.8"
 crossbeam-channel = "0.5"
 aphrody-emu-utils = {  path = "crates/aphrody-emu-utils", features = ["triple-buffer", "app"] }
 aphrody-dust-core = {  path = "crates/aphrody-dust-core" }
-aphrody-emulator-host = {  path = "crates/aphrody-emulator-host" }
+bun-engine = { path = "crates/bun-engine-core", default-features = false }
 aphrody-gpu-backend = { path = "crates/aphrody-gpu-backend", features = ["webgpu"] }
 aphrody-wii = { path = "crates/aphrody-wii" }
 aphrody-wii-image = { path = "crates/aphrody-wii-image" }
@@ -1188,7 +1184,6 @@ aphrody-nie-geom = { path = "crates/aphrody-nie-geom",  }
 aphrody-nie-video = { path = "crates/aphrody-nie-video",  }
 aphrody-nie-sql = { path = "crates/aphrody-nie-sql",  }
 aphrody-nie-tasks = { default-features = false, path = "crates/aphrody-nie-tasks",  }
-aphrody-nie-emu = { path = "crates/aphrody-nie-emu",  }
 aphrody-nie-pe-inspect = { path = "crates/aphrody-nie-pe-inspect",  }
 ignore = { version = "0.4" }
 image_dds = { version = "0.7", default-features = false }

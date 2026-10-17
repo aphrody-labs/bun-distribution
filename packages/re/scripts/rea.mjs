@@ -9,13 +9,17 @@ import { fileURLToPath } from "node:url";
 const args = process.argv.slice(2);
 // Bun OS subcommands run from source, beside the bundled Incur CLI.
 const bunOsCommands = {
-  steam: "../src/steam/cli.ts",
-  pipeline: "../src/pipeline/cli.ts",
-  install: "./install.ts",
+  steam: ["../src/steam/cli.ts", "main"],
+  pipeline: ["../src/pipeline/cli.ts", "main"],
+  replica: ["../src/replica/cli.ts", "main"],
+  "ghidra-win": ["../src/replica/cli.ts", "ghidraMain"],
+  magika: ["../src/replica/cli.ts", "magikaMain"],
+  install: ["./install.ts", "main"],
 };
 if (args[0] !== undefined && Object.hasOwn(bunOsCommands, args[0])) {
-  const { main } = await import(bunOsCommands[args[0]]);
-  process.exit(await main(args.slice(1)));
+  const [module, entry] = bunOsCommands[args[0]];
+  const commands = await import(module);
+  process.exit(await commands[entry](args.slice(1)));
 }
 const { default: packageJson } = await import("../package.json", {
   with: { type: "json" },

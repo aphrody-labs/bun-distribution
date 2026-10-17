@@ -1,8 +1,15 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
+pub mod backend;
 pub mod binary;
+#[cfg(feature = "cartridge")]
+pub mod cartridge;
 pub mod ffi;
-pub mod reverse;
+#[cfg(feature = "host")]
+pub mod host;
+pub mod machine;
+#[cfg(feature = "window")]
+pub mod window;
 
 use std::time::Duration;
 

@@ -19,7 +19,7 @@ use aphrody_dust_core::{
     spi::firmware,
     utils::{BoxedByteSlice, Bytes, zeroed_box},
 };
-use aphrody_emulator_host::{DsHost, DsInput};
+use bun_engine::host::{DsHost, DsInput};
 use js_sys::{Function, Uint8Array, Uint32Array};
 use wasm_bindgen::prelude::*;
 

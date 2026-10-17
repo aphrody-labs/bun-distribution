@@ -1,0 +1,49 @@
+# Emulation stack (CachyOS, Arch core/extra/multilib, AUR fallback). Firmware, BIOS and games are
+# never packaged: users import their own dumps with `bep add firmware|rom`.
+# Bun Engine: one CLI (`bun-engine`, `bep`), one window, the in-tree cores (DS, ARM, x86).
+bun-engine
+# Multi-system frontends and cores
+retroarch
+retroarch-assets-xmb
+retroarch-assets-ozone
+libretro-core-info
+libretro
+mame
+ares-emu
+mednafen
+# Nintendo
+melonds
+desmume
+dolphin-emu
+azahar
+cemu
+mgba-qt
+sameboy
+mupen64plus
+rmg
+snes9x-gtk
+bsnes-hd
+nestopia
+fceux
+# Sony
+pcsx2
+duckstation
+rpcs3
+ppsspp
+vita3k-bin
+shadps4
+# Sega
+flycast
+# Microsoft
+xemu
+# PC, DOS and virtual machines (ARM firmware, Linux and Windows guests)
+dosbox-staging
+scummvm
+86box
+qemu-full
+edk2-ovmf
+edk2-aarch64
+swtpm
+# Android
+waydroid
+android-tools

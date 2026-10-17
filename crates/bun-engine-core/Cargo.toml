@@ -2,20 +2,51 @@
 name = "bun-engine"
 version = "0.1.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
-description = "Unified Rust game-engine kernel with Bevy, wgpu and winit"
+license = "GPL-3.0-or-later"
+description = "Unified Rust engine and emulator kernel: plugins, binary inspection, one Machine trait, one input, one wgpu/winit window and one CLI over every in-tree core"
 repository = "https://github.com/aphrody-labs/bun-engine"
 
 [lib]
 crate-type = ["rlib", "cdylib", "staticlib"]
 
+# Every consumer selects what it shares; nothing is duplicated in another crate.
+[features]
+default = ["window", "nds", "host", "arm", "x86", "cartridge"]
+# Nintendo DS machine on Dust with software 2D/3D rendering.
+nds = ["dep:aphrody-dust-soft-2d", "dep:aphrody-dust-soft-3d"]
+# Bevy scheduling of the DS core (wasm and desktop hosts).
+host = ["nds", "dep:bevy_app", "dep:bevy_ecs"]
+bevy-web = ["host", "bevy_app/web"]
+# AArch64 firmware machine on the rdynarmic JIT.
+arm = ["dep:rdynarmic"]
+# x86 guests on the Windows Hypervisor Platform.
+x86 = ["dep:windows"]
+# The single winit window and wgpu presenter.
+window = ["dep:winit", "dep:wgpu", "dep:aphrody-gpu-backend", "dep:pollster"]
+# Nintendo DS cartridge inspection (`bun-engine info`).
+cartridge = ["aphrody-dust-core/nds-complete", "dep:serde_json"]
+
 [dependencies]
-bevy_app.workspace = true
-bevy_ecs.workspace = true
-wgpu.workspace = true
-winit.workspace = true
-ghidra-decompiler.workspace = true
+aphrody-dust-core = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+aphrody-dust-soft-2d = { path = "../aphrody-dust-soft-2d", optional = true }
+aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d", optional = true }
+bevy_app = { workspace = true, optional = true }
+bevy_ecs = { workspace = true, optional = true }
+rdynarmic = { path = "../rdynarmic", optional = true }
+wgpu = { workspace = true, optional = true }
+winit = { workspace = true, features = ["rwh_06"], optional = true }
+aphrody-gpu-backend = { path = "../aphrody-gpu-backend", optional = true }
+pollster = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_System_Hypervisor", "Win32_System_Memory"], optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
 
 [[bin]]
-name = "bun-engine-editor"
-path = "src/bin/editor.rs"
+name = "bun-engine"
+path = "src/bin/bun-engine.rs"
+required-features = ["window", "nds", "arm", "cartridge"]

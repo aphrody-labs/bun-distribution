@@ -16,10 +16,13 @@ aphrody-dust-core = { path = "../../crates/aphrody-dust-core" }
 aphrody-dust-soft-2d = { path = "../../crates/aphrody-dust-soft-2d" }
 aphrody-dust-soft-3d = { path = "../../crates/aphrody-dust-soft-3d" }
 aphrody-dust-wgpu = { path = "../../crates/aphrody-dust-wgpu" }
-aphrody-emulator-host = { workspace = true }
+bun-engine = { workspace = true, features = ["host"] }
 wasm-bindgen-futures = { workspace = true }
 wasm-bindgen = { workspace = true }
 js-sys = { workspace = true }
 web-sys = { workspace = true, features = ["console", "OffscreenCanvas"] }
 slog = { workspace = true, optional = true }
 console_error_panic_hook = { workspace = true }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+bun-engine = { workspace = true, features = ["bevy-web"] }

@@ -12,7 +12,7 @@ Out of scope per owner direction: `bun-engine-android`, Shenron, and the Android
 | `crates/nds/dust-core`, `emu-utils`, `emu-utils-macros` | deduplicated: canonical owners `crates/aphrody-dust-core`, `aphrody-emu-utils`, `aphrody-emu-utils-macros`; `bun-engine-nds` uses the workspace dependency |
 | `crates/aphrody-aarch64`, `-switch`, `-wii`, `-wii-image` (GPL) | `crates/<same>`; consumers (`aphrody-wii-debug`, `aphrody-wii-runtime`, `ruzu-video-core`, `iecode-web-wii-wasm`, root `[workspace.dependencies]`) repointed from the `bun-engine.git` rev pin to path dependencies |
 | `packages/bun-engine` | `packages/bun-engine` (own `package.json`; `@typesafe-ai/sdk` -> `@aphrody/typesafe-sdk`; `test/`, `plugins/consoles`, `config/workspace.json`, `web/app`, `types/` moved inside) |
-| `packages/bun-engine/src/core/replica` (skill pack) | `packages/re/plugin/skills/replica-*` (one RE plugin with the rea, Steam and Ghidra skills; MIT notice in `packages/re/third_party/replica`) |
+| `packages/bun-engine/src/core/replica` (skill pack, Replica/Ghidra/Magika commands, now `re replica`, `re ghidra-win`, `re magika`) | `packages/re/plugin/skills/replica-*` (one RE plugin with the rea, Steam and Ghidra skills; MIT notice in `packages/re/third_party/replica`) |
 | `packages/docs-sync` | `packages/docs-sync` |
 | `docs/*.md`, `replica/*`, `crates/{EMULATION,THIRD_PARTY}.md`, README, LICENSE | `docs/bun-engine/` (licenses and provenance kept) |
 | root `Cargo.toml`, `package.json`, `tsconfig.json`, `Makefile`, `vcpkg.json`, `bun.lock`, `Cargo.lock` | dropped: bun-os root owns workspace/toolchain/lockfiles (nightly per `rust-toolchain.toml`, Bun 1.4.4); `vcpkg.json` had no dependencies |

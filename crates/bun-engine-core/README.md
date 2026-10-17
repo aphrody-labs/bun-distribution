@@ -1,0 +1,46 @@
+# Bun Engine
+
+Unified Rust kernel (`bun-engine` crate): plugin scheduling, binary inspection, the C ABI, and
+every emulation machine behind one `machine::Machine` trait, one `machine::Input`, one wgpu/winit
+window (`window`) and one CLI (`bun-engine run <system> <image>`).
+
+## Absorbed owners
+
+| Former crate | Now |
+| --- | --- |
+| `bun-emu` | `machine` (DS, ARM, x86), `window`, the `bun-engine` binary |
+| `aphrody-nie-emu` | `backend` (backend registry, capability contracts, headless sessions) |
+| `aphrody-emulator-host` | `host` (Bevy scheduling of the DS core) |
+| `bun-engine-nds` | `cartridge` (DS header inspection), `bun-engine info`, `dotnet/` Tinke |
+
+The native decompiler wrapper moved to `bun-re` (`decompile` feature); reverse engineering stays
+with `crates/re`, rea and Replica.
+
+## Features
+
+`window`, `nds`, `host` (`bevy-web` for wasm), `arm`, `x86`, `cartridge`. Consumers take
+`bun-engine` from the workspace with `default-features = false` and enable what they share.
+
+## Machines
+
+| System | Core | State |
+| --- | --- | --- |
+| Nintendo DS | `aphrody-dust-core` (interpreter, soft 2D/3D, HLE BIOS) | runs: `bun-engine run nds <rom>` |
+| ARM firmware | `rdynarmic` A64 JIT, QEMU `virt` map (RAM 0x4000_0000, PL011) | runs EL0 code: `bun-engine run arm <image>` |
+| x86 guests | Windows Hypervisor Platform partition, COM1 | runs flat images: `bun-engine run x86 <image>`; Linux 64-bit boot in progress |
+| Wii/GameCube | `aphrody-wii-runtime`, `aphrody-wii-render`, `aphrody-wii` | in tree, not yet a machine |
+| Switch | `ruzu`, `rdynarmic`, `aphrody-switch` | in tree, not yet a machine |
+| Other Rust cores | `vendor/{starpsx,zakuro,gopher64,jgenesis,rustboyadvance-ng,tetanes,retroboy}` | pinned in the console catalog |
+| C++ cores | `vendor/{ares,mame,retroarch}` | pinned in the console catalog |
+
+## Stack decisions
+
+- **Qt 6 front end:** `cxx-qt` (KDAB) for QObject/QML from Rust; it does not wrap QWidgets.
+  `qmetaobject-rs` is the direct-API alternative.
+- **Rust and C++:** `cxx` for interfaces we own, `autocxx` for large existing C++ trees such
+  as the vendored emulators, `bindgen` for C, `cbindgen` for Rust-to-C headers.
+- **Android from Rust:** `ndk` and `ndk-context` crates with `cargo-ndk`; JNI directly or
+  UniFFI (JNA does not call `JNI_OnLoad`, so initialize `ndk-context` explicitly).
+- **Hypervisor guests:** QEMU's Rust support covers device models only; accelerators stay
+  C. For an in-process Windows guest use the `whpx` crate (x64 only); on Linux
+  `kvm-ioctls` from rust-vmm.

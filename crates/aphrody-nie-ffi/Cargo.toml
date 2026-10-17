@@ -38,6 +38,6 @@ aphrody-nie-app.workspace = true
 # Rust-owned wiki queries exposed to Bun through the native boundary.
 aphrody-nie-wiki.workspace = true
 # The single in-process console/backend contract exposed to Bun and other hosts.
-aphrody-nie-emu.workspace = true
+bun-engine.workspace = true
 # Save game encryption/decryption, checksums and blob extraction
 aphrody-nie-save = { workspace = true, features = ["serde"] }

@@ -203,10 +203,6 @@
 	path = vendor/libctru
 	url = https://github.com/aphrody-labs/libctru.git
 
-[submodule "crates/bun-emu/vendor/melonds"]
-	path = crates/bun-emu/vendor/melonds
-	url = https://github.com/aphrody-labs/melonds.git
-
 [submodule "vendor/mingw-packages"]
 	path = vendor/mingw-packages
 	url = https://github.com/aphrody-labs/MINGW-packages.git
@@ -313,9 +309,6 @@
 [submodule "vendor/ares"]
 	path = vendor/ares
 	url = https://github.com/ares-emulator/ares.git
-[submodule "crates/bun-emu/vendor/azahar"]
-	path = crates/bun-emu/vendor/azahar
-	url = https://github.com/aphrody-labs/azahar.git
 [submodule "vendor/calico"]
 	path = vendor/calico
 	url = https://github.com/aphrody-labs/calico.git
@@ -340,9 +333,6 @@
 [submodule "vendor/directx-samples"]
 	path = vendor/directx-samples
 	url = https://github.com/microsoft/DirectX-Graphics-Samples.git
-[submodule "crates/bun-emu/vendor/dolphin"]
-	path = crates/bun-emu/vendor/dolphin
-	url = https://github.com/aphrody-labs/dolphin.git
 [submodule "vendor/ghidra"]
 	path = vendor/ghidra
 	url = https://github.com/aphrody-labs/ghidra.git
@@ -572,15 +562,24 @@
 [submodule "crates/apkeep"]
 	path = crates/apkeep
 	url = https://github.com/aphrody-labs/apkeep.git
-[submodule "crates/bun-emu/vendor/pcsx2"]
-	path = crates/bun-emu/vendor/pcsx2
-	url = https://github.com/aphrody-labs/pcsx2.git
-[submodule "crates/bun-emu/vendor/gecko"]
-	path = crates/bun-emu/vendor/gecko
-	url = https://github.com/aphrody-labs/gecko.git
-[submodule "crates/bun-emu/vendor/oboromi"]
-	path = crates/bun-emu/vendor/oboromi
+[submodule "vendor/dolphin"]
+	path = vendor/dolphin
+	url = https://github.com/aphrody-labs/dolphin.git
+[submodule "vendor/oboromi"]
+	path = vendor/oboromi
 	url = https://github.com/aphrody-labs/oboromi.git
-[submodule "crates/bun-emu/vendor/nexium"]
-	path = crates/bun-emu/vendor/nexium
+[submodule "vendor/pcsx2"]
+	path = vendor/pcsx2
+	url = https://github.com/aphrody-labs/pcsx2.git
+[submodule "vendor/nexium"]
+	path = vendor/nexium
 	url = https://github.com/aphrody-labs/nexium.git
+[submodule "vendor/melonds"]
+	path = vendor/melonds
+	url = https://github.com/aphrody-labs/melonds.git
+[submodule "vendor/azahar"]
+	path = vendor/azahar
+	url = https://github.com/aphrody-labs/azahar.git
+[submodule "vendor/gecko"]
+	path = vendor/gecko
+	url = https://github.com/aphrody-labs/gecko.git

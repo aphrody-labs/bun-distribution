@@ -90,12 +90,13 @@ export async function validateConsoleCatalog(
       const sourceAt = `${at}.sources[${sourceIndex}]`;
       if (!sourceKinds.includes(source.kind)) errors.push(`${sourceAt}.kind is invalid`);
       if (!safeSourcePath(source.path)) errors.push(`${sourceAt}.path escapes owned source roots`);
-      else if (!(await sourceExists(source.path, root))) errors.push(`${sourceAt}.path does not exist: ${source.path}`);
-      if (component.integration === "submodule" && safeSourcePath(source.path)) {
-        const result = Bun.spawnSync(["git", "-C", `${root}/${source.path}`, "rev-parse", "HEAD"]);
-        if (!result.success || result.stdout.toString().trim() !== component.sourceRev)
-          errors.push(`${sourceAt}.revision does not match sourceRev`);
-      }
+      else if (component.integration === "submodule") {
+        // The pinned gitlink is the source of truth; the submodule need not be checked out.
+        const pinned = Bun.spawnSync(["git", "-C", root, "ls-files", "-s", "--", source.path]).stdout.toString();
+        const [mode, sha] = pinned.split(/\s+/);
+        if (mode !== "160000") errors.push(`${sourceAt}.path is not a pinned submodule: ${source.path}`);
+        else if (sha !== component.sourceRev) errors.push(`${sourceAt}.revision does not match sourceRev`);
+      } else if (!(await sourceExists(source.path, root))) errors.push(`${sourceAt}.path does not exist: ${source.path}`);
     }
   }
   return errors;

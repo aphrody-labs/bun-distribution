@@ -48,7 +48,7 @@
 //! | `nie_font_render_text`     | Rend une chaîne UTF-8 avec la police → octets PNG RGBA8          |
 //! | `nie_font_render_text_out` | Idem, via `*mut NieBytes` (Bun FFI-friendly)                     |
 //! | `nie_font_free`            | Libère le handle `FontCtx`                                       |
-//! | `nie_emu_registry_json_out` | Expose la matrice backend/capability de `aphrody-nie-emu`                 |
+//! | `nie_emu_registry_json_out` | Expose la matrice backend/capability de `bun_engine::backend`               |
 //!
 //! # Invariants de sécurité pour les appelants
 //!
@@ -333,7 +333,7 @@ impl NieBytes {
     }
 }
 
-/// Sérialise le registre `aphrody-nie-emu` (backends et adaptateurs) vers un tampon C-ABI.
+/// Sérialise le registre `bun_engine::backend` (backends et adaptateurs) vers un tampon C-ABI.
 ///
 /// La fonction ne découvre rien et ne lance aucun processus. Elle donne aux hôtes Bun, C#,
 /// Python et WASM le même contrat de capacités avant qu'un adaptateur FFI in-process ne soit
@@ -350,9 +350,9 @@ pub unsafe extern "C" fn nie_emu_registry_json_out(out: *mut NieBytes) {
         return;
     }
     let value = serde_json::json!({
-        "backends": aphrody_nie_emu::REGISTRY.all(),
-        "adapters": aphrody_nie_emu::REGISTRY.adapters(),
-        "common_capabilities": aphrody_nie_emu::COMMON_CAPABILITIES,
+        "backends": bun_engine::backend::REGISTRY.all(),
+        "adapters": bun_engine::backend::REGISTRY.adapters(),
+        "common_capabilities": bun_engine::backend::COMMON_CAPABILITIES,
     });
     let bytes = serde_json::to_vec(&value).unwrap_or_default();
     // SAFETY: out is non-null and exclusively owned by the caller for this call.

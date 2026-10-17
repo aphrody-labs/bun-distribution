@@ -169,6 +169,7 @@
       "platforms": ["linux/amd64"],
       "targets": {
         "gaming": "image",
+        "emulation": "image",
         "bootable": "rootfs"
       }
     },

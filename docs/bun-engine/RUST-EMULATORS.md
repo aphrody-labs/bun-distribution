@@ -27,7 +27,9 @@ the provenance authority and the gitlink pins make source drift explicit.
 | --- | --- |
 | GameCube / Wii | Local `aphrody-wii` and `aphrody-wii-image` crates provide bounded loaders and execution primitives, not a complete emulator. |
 | Nintendo Switch | Local `aphrody-switch` and `aphrody-aarch64` provide CPU/texture primitives, not a complete emulator. No mature full Rust owner was selected. |
-| Switch 2 | Oboromi was excluded from the selected set because its upstream describes it as a proof of concept. |
+| Switch 2 | Oboromi is pinned at `vendor/oboromi` for research; its upstream describes it as a proof of concept. |
+| Switch | Nexium (homebrew) is pinned at `vendor/nexium`. |
+| GameCube / Wii | gecko is pinned at `vendor/gecko`; its interpreter is retained in `aphrody-wii-runtime`. |
 | Atari 2600, Dreamcast, PSP, Xbox | Current Rust candidates were too early, inactive, or lacked clear licensing/coverage evidence for a preferred owner. They can be re-evaluated from upstream rather than absorbed speculatively. |
 
 ## Distribution boundary

@@ -1,0 +1,38 @@
+# Bun Engine: the native emulator kernel (one Machine trait, one wgpu/winit window) and its
+# `bun-engine`/`bep` CLI and package manager, built from the Bun OS workspace.
+pkgname=bun-engine
+pkgver=0.1.0
+pkgrel=1
+_commit=@COMMIT@
+pkgdesc='Bun Engine emulator kernel, CLI and multi-console package manager'
+arch=('x86_64')
+url='https://github.com/aphrody-labs/bun-distribution'
+license=('GPL-3.0-or-later')
+depends=('glibc' 'gcc-libs' 'vulkan-icd-loader' 'libxkbcommon' 'wayland' 'bun-aphrody')
+optdepends=('mesa: Vulkan/GL drivers for the window'
+            'qemu-full: reference QEMU for ARM firmware and Linux/Windows guests')
+makedepends=('git' 'rustup' 'clang' 'pkgconf' 'cmake')
+options=('!lto' '!debug')
+source=("bun-os::git+https://github.com/aphrody-labs/bun-distribution.git#commit=${_commit}")
+sha256sums=('SKIP')
+
+build() {
+  cd bun-os
+  git submodule update --init --depth 1 toolchains/bun
+  bash scripts/aphrody/build/rust/cargo-serial.sh build --release --locked -p bun-engine --bin bun-engine
+}
+
+package() {
+  cd bun-os
+  install -Dm755 target/release/bun-engine "$pkgdir/usr/lib/bun-engine/bun-engine"
+  # The TypeScript CLI is the single front door; it runs the native engine from /usr/lib/bun-engine.
+  install -dm755 "$pkgdir/usr/share/bun-engine"
+  cp -a packages/bun-engine/src packages/bun-engine/plugins packages/bun-engine/package.json \
+    "$pkgdir/usr/share/bun-engine/"
+  for cli in bun-engine:cli bep:bep; do
+    printf '#!/bin/sh\nexec bun /usr/share/bun-engine/src/%s.ts "$@"\n' "${cli#*:}" >"$srcdir/${cli%%:*}"
+    install -Dm755 "$srcdir/${cli%%:*}" "$pkgdir/usr/bin/${cli%%:*}"
+  done
+  install -Dm644 crates/bun-engine-core/LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 crates/bun-engine-core/DUST-PROVENANCE.md "$pkgdir/usr/share/licenses/$pkgname/DUST-PROVENANCE.md"
+}

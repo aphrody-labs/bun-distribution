@@ -36,6 +36,8 @@ steam-emulator = ["dep:aphrody-nie-net"]
 # DBXV2 extraction and conversion passes of `bunre dbxv2` (streaming CPK extraction, DDS -> PNG,
 # CRI audio -> WAV, SQLite/FTS5 asset index) over the canonical aphrody-nie-formats readers.
 dbxv2 = ["dep:aphrody-nie-formats", "dep:rusqlite"]
+# In-process decompilation through the Rust Ghidra decompiler (PE, ELF, Mach-O).
+decompile = ["dep:ghidra-decompiler"]
 # Native Steam depot download (steamroom) and the `bunre steam` subcommand.
 steam-download = [
     "dep:anyhow",
@@ -51,6 +53,7 @@ steam-download = [
 ]
 
 [dependencies]
+ghidra-decompiler = { workspace = true, optional = true }
 goblin     = { version = "0.10", default-features = false, features = ["std", "endian_fd", "pe32", "pe64", "elf32", "elf64"] }
 sha2       = "0.11.0"
 md-5       = "0.11.0"

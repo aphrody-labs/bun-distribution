@@ -452,9 +452,8 @@ pub const EXTERNALS: &[ExternalAdapter] = &[
     ext!("re-dbxv2", Analyze, Crate, "crates/re/src/game", ["cpk", "dbxv2"], Probe::Path("crates/re/src/game"), None),
     ext!("ntr-ghidra", Analyze, Vendor, "vendor/ntr-ghidra", ["nds", "3ds"], Probe::Path("vendor/ntr-ghidra"), None),
     ext!("wii-disasm", Analyze, Crate, "crates/aphrody-wii-disasm", ["wii", "gamecube"], Probe::Path("crates/aphrody-wii-disasm"), None),
-    ext!("bun-engine-nds", Analyze, Crate, "crates/bun-engine-nds", ["nds"], Probe::Path("crates/bun-engine-nds"), None),
-    ext!("aarch64-lift", Lift, Crate, "crates/rdynarmic", ["arm64", "aarch64"], Probe::Path("crates/rdynarmic"), None),
-    ext!("ghidra-decompiler", Decompile, Vendor, "vendor/ghidra-decompiler", ["*"], Probe::Path("vendor/ghidra-decompiler"), None),
+        ext!("aarch64-lift", Lift, Crate, "crates/rdynarmic", ["arm64", "aarch64"], Probe::Path("crates/rdynarmic"), None),
+    ext!("ghidra-decompiler", Decompile, Crate, "crates/ghidra-decompiler", ["*"], Probe::Path("crates/ghidra-decompiler"), None),
     // rebuild
     ext!("factory-linux", Rebuild, Vendor, "bun src/cli.ts factory (factory/native-targets.json)", ["elf", "linux"], Probe::Path("factory/native-targets.json"), None),
     ext!("factory-arch", Rebuild, Vendor, "bun src/cli.ts factory --composition server|desktop|gaming", ["elf", "linux"], Probe::Path("factory/arch"), None),
@@ -465,8 +464,7 @@ pub const EXTERNALS: &[ExternalAdapter] = &[
     ext!("uefi-repack", Rebuild, Command, "UEFIReplace / UEFIPatch", ["uefi", "bios", "target:bios"], Probe::Command("UEFIReplace"), None),
     ext!("firmware-repack", Rebuild, Command, "mkimage / dtc / mksquashfs", ["target:firmware", "fdt"], Probe::Command("mkimage"), None),
     // verify (emulators)
-    ext!("emu-nie", Verify, Crate, "crates/aphrody-nie-emu", ["*"], Probe::Path("crates/aphrody-nie-emu"), None),
-    ext!("emu-host", Verify, Crate, "crates/aphrody-emulator-host", ["*"], Probe::Path("crates/aphrody-emulator-host"), None),
+    ext!("bun-engine", Verify, Crate, "crates/bun-engine-core", ["*"], Probe::Path("crates/bun-engine-core"), None),
     ext!("emu-wii-runtime", Verify, Crate, "crates/aphrody-wii-runtime", ["wii", "gamecube"], Probe::Path("crates/aphrody-wii-runtime"), None),
     ext!("emu-dolphin", Verify, Vendor, "vendor/dolphin", ["wii", "gamecube"], Probe::Path("vendor/dolphin"), None),
     ext!("emu-ares", Verify, Vendor, "vendor/ares", ["rom", "nes", "gb", "gba", "n64"], Probe::Path("vendor/ares"), None),

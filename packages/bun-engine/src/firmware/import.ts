@@ -65,3 +65,13 @@ export async function importFirmware(
   await Bun.write(join(directory, `${sha256}.json`), `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
 }
+
+/** Firmware imported into the store, optionally for one console. */
+export async function listFirmware(consoleName?: string, store = defaultFirmwareStore()): Promise<FirmwareManifest[]> {
+  const pattern = consoleName ? `${safeConsoleName(consoleName)}/*.json` : "*/*.json";
+  const manifests: FirmwareManifest[] = [];
+  for await (const path of new Bun.Glob(pattern).scan({ cwd: resolve(store), absolute: true, onlyFiles: true })) {
+    manifests.push(await Bun.file(path).json());
+  }
+  return manifests.sort((a, b) => a.console.localeCompare(b.console) || a.importedAt.localeCompare(b.importedAt));
+}

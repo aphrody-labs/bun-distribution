@@ -43,9 +43,9 @@ Commands:
 
 - 'bun run probe'
 - 'bun run compile' emits the optimized single-file executable.
-- 'bun run ml:setup' and 'bun run ml:identify -- <path>' provision and use Magika classification.
-- 'bun run skills' lists the embedded Replica workflow; 'bun run ./packages/bun-engine/src/cli.ts skill recon' prints one skill and 'bun run ./packages/bun-engine/src/cli.ts pipeline replica' exposes its ordered artifact pipeline.
-- 'bun run ghidra:probe' qualifies Ghidra, NTRGhidra, Java and the native Windows toolchain through 'bun:windows'; 'ghidra:inspect <pe>' uses the native PE parser before analysis.
+- 're magika setup' and 're magika identify <path>' provision and use Magika classification.
+- 're replica skills' lists the Replica workflow; 're replica skill recon' prints one skill and 're replica pipeline' exposes its ordered artifact pipeline.
+- 're ghidra-win probe' qualifies Ghidra, NTRGhidra, Java and the native Windows toolchain through 'bun:windows'; 're ghidra-win inspect <pe>' uses the native PE parser before analysis.
 - 'bep install', 'bep add' and 'bep pm' expose Bun Engine Packages.
 - 'bep firmware:index' crawls the complete public BIOS catalog and every detail page through bounded native Bun fetch/HTMLRewriter workers, without exposing or downloading payload archives.
 - 'bun run qualify:fc27'

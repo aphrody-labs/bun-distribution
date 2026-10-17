@@ -37,16 +37,16 @@ workspaces and `src/pipeline/reverse.ts` defines the canonical engine sequence:
 
 ## Windows 11 integration
 
-`packages/bun-engine/src/re/ghidra.ts` uses the fork's `bun:windows` API directly. It discovers the
+`packages/re/src/ghidra/windows.ts` uses the fork's `bun:windows` API directly. It discovers the
 Windows version, MSVC and Windows SDK without `vswhere`, parses PE metadata without
 loading the image, and contains Gradle/Java descendants in a Windows Job Object.
 Closing the owner terminates its entire process tree.
 
 ```powershell
-bun run ghidra:probe
+re ghidra-win probe
 bun run ./src/cli.ts ghidra:inspect C:\path\program.exe
-bun run ./src/cli.ts pipeline reverse
-bun run ghidra:build
+re pipeline adapters
+re ghidra-win build
 ```
 
 The current workstation qualification covers Windows 11 x64, MSVC 14.44, Windows

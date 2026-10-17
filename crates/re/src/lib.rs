@@ -105,6 +105,9 @@ pub mod pdata;
 /// C and Rust emission, rebuild and verify. Entry point: [`pipeline::run`].
 #[cfg(feature = "pipeline")]
 pub mod pipeline;
+/// In-process decompilation of PE, ELF and Mach-O through the Rust Ghidra decompiler.
+#[cfg(feature = "decompile")]
+pub mod decompile;
 /// Semi-supervised label propagation over a call graph.
 pub mod propagate;
 /// WebAssembly bindings (feature `wasm`).

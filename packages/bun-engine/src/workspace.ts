@@ -67,7 +67,6 @@ export async function compileWorkspace(options: CompileWorkspaceOptions = {}): P
       assets: [
         join(root, "packages", "bun-engine", "web", "app"),
         join(root, "packages", "bun-engine", "config"),
-        join(root, "packages", "replica"),
       ],
       execArgv: ["--smol"],
       autoloadTsconfig: false,

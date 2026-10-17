@@ -18,7 +18,7 @@ Windows and Web. The ROM and extracted proprietary content are never committed.
 
 | ID | Screen | Entry | Purpose | States |
 | --- | --- | --- | --- | --- |
-| S01 | Intake | `bun-engine replica:nds PATH` | Validate and fingerprint the external ROM | valid, missing, invalid |
+| S01 | Intake | `re replica nds PATH` | Validate and fingerprint the external ROM | valid, missing, invalid |
 | S02 | System setup | Desktop/Web launcher | Select ROM and optional user-owned BIOS/firmware | direct boot, firmware boot, error |
 | S03 | Dual display | Start | Render top and touch screens | loading, running, paused, stopped |
 | S04 | Controls | Keyboard/touch/gamepad | Send DS buttons and stylus input | idle, pressed, touch, disconnected |

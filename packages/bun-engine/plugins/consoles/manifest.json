@@ -228,27 +228,6 @@
       ]
     },
     {
-      "id": "melonds",
-      "console": "nintendo-ds-dsi",
-      "cpu": [
-        "arm7",
-        "arm9"
-      ],
-      "runtime": "hle-core",
-      "firmwarePolicy": "caller-supplied-only",
-      "license": "GPL-3.0-only",
-      "publicationGate": "deferred-review",
-      "integration": "submodule",
-      "sourceRev": "906e9ebb27da8c6a715cd7abab4abfe8a8d29427",
-      "buildOwner": "packages/bun-engine/src/console/catalog.ts#melonds",
-      "sources": [
-        {
-          "kind": "cpp-source-tree",
-          "path": "crates/bun-emu/vendor/melonds"
-        }
-      ]
-    },
-    {
       "id": "open-agb-firm",
       "console": "nintendo-3ds-gba",
       "cpu": [
@@ -285,48 +264,6 @@
         {
           "kind": "cpp-source-tree",
           "path": "vendor/ares"
-        }
-      ]
-    },
-    {
-      "id": "dolphin",
-      "console": "nintendo-wii-gamecube",
-      "cpu": [
-        "powerpc-broadway",
-        "powerpc-gekko"
-      ],
-      "runtime": "hle-core",
-      "firmwarePolicy": "caller-supplied-only",
-      "license": "GPL-2.0-or-later",
-      "publicationGate": "deferred-review",
-      "integration": "submodule",
-      "sourceRev": "8d2ad1a662472955497e5bb79d7b9ec6999e1f0d",
-      "buildOwner": "docs/CONSOLE-PROVENANCE.md#dolphin",
-      "sources": [
-        {
-          "kind": "cpp-source-tree",
-          "path": "crates/bun-emu/vendor/dolphin"
-        }
-      ]
-    },
-    {
-      "id": "azahar",
-      "console": "nintendo-3ds",
-      "cpu": [
-        "arm11",
-        "arm9"
-      ],
-      "runtime": "hle-core",
-      "firmwarePolicy": "caller-supplied-only",
-      "license": "GPL-3.0-only",
-      "publicationGate": "deferred-review",
-      "integration": "submodule",
-      "sourceRev": "73ed0e9106a5b69a8ef67d920f534150e82c6277",
-      "buildOwner": "docs/CONSOLE-PROVENANCE.md#azahar",
-      "sources": [
-        {
-          "kind": "cpp-source-tree",
-          "path": "crates/bun-emu/vendor/azahar"
         }
       ]
     },
@@ -533,6 +470,68 @@
       ]
     },
     {
+      "id": "melonds",
+      "console": "nintendo-ds-dsi",
+      "cpu": [
+        "arm7",
+        "arm9"
+      ],
+      "runtime": "hle-core",
+      "firmwarePolicy": "caller-supplied-only",
+      "license": "GPL-3.0-or-later",
+      "publicationGate": "deferred-review",
+      "integration": "submodule",
+      "sourceRev": "906e9ebb27da8c6a715cd7abab4abfe8a8d29427",
+      "buildOwner": "Cargo.toml#bun-engine",
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "vendor/melonds"
+        }
+      ]
+    },
+    {
+      "id": "azahar",
+      "console": "nintendo-3ds",
+      "cpu": [
+        "arm11"
+      ],
+      "runtime": "hle-core",
+      "firmwarePolicy": "caller-supplied-only",
+      "license": "GPL-2.0-or-later",
+      "publicationGate": "deferred-review",
+      "integration": "submodule",
+      "sourceRev": "73ed0e9106a5b69a8ef67d920f534150e82c6277",
+      "buildOwner": "Cargo.toml#bun-engine",
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "vendor/azahar"
+        }
+      ]
+    },
+    {
+      "id": "dolphin",
+      "console": "nintendo-wii-gamecube",
+      "cpu": [
+        "powerpc-gekko",
+        "powerpc-broadway"
+      ],
+      "runtime": "hle-core",
+      "firmwarePolicy": "caller-supplied-only",
+      "license": "GPL-2.0-or-later",
+      "publicationGate": "deferred-review",
+      "integration": "submodule",
+      "sourceRev": "8d2ad1a662472955497e5bb79d7b9ec6999e1f0d",
+      "buildOwner": "Cargo.toml#bun-engine",
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "vendor/dolphin"
+        }
+      ]
+    },
+    {
       "id": "pcsx2",
       "console": "sony-playstation-2",
       "cpu": [
@@ -544,11 +543,11 @@
       "publicationGate": "deferred-review",
       "integration": "submodule",
       "sourceRev": "091ab68708a555198d80a7216965481c7ddd0d98",
-      "buildOwner": "crates/bun-emu/vendor/pcsx2/CMakeLists.txt",
+      "buildOwner": "Cargo.toml#bun-engine",
       "sources": [
         {
           "kind": "cpp-source-tree",
-          "path": "crates/bun-emu/vendor/pcsx2"
+          "path": "vendor/pcsx2"
         }
       ]
     },
@@ -565,11 +564,11 @@
       "publicationGate": "deferred-review",
       "integration": "submodule",
       "sourceRev": "91950c6364d8a464d6eb0a666dbf3a6dec24d5bb",
-      "buildOwner": "crates/bun-emu/vendor/gecko/Cargo.toml",
+      "buildOwner": "Cargo.toml#bun-engine",
       "sources": [
         {
           "kind": "rust-crate",
-          "path": "crates/bun-emu/vendor/gecko"
+          "path": "vendor/gecko"
         }
       ]
     },
@@ -585,11 +584,11 @@
       "publicationGate": "deferred-review",
       "integration": "submodule",
       "sourceRev": "a4d9f7503f484a19cfa1218412f9e15b3dfbe48d",
-      "buildOwner": "crates/bun-emu/vendor/oboromi/Cargo.toml",
+      "buildOwner": "Cargo.toml#bun-engine",
       "sources": [
         {
           "kind": "rust-crate",
-          "path": "crates/bun-emu/vendor/oboromi"
+          "path": "vendor/oboromi"
         }
       ]
     },
@@ -605,11 +604,11 @@
       "publicationGate": "deferred-review",
       "integration": "submodule",
       "sourceRev": "d9878f72a4aac607a5aa32b837158a3099bbbe00",
-      "buildOwner": "crates/bun-emu/vendor/nexium/Cargo.toml",
+      "buildOwner": "Cargo.toml#bun-engine",
       "sources": [
         {
           "kind": "rust-crate",
-          "path": "crates/bun-emu/vendor/nexium"
+          "path": "vendor/nexium"
         }
       ]
     }
