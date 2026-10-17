@@ -5,7 +5,7 @@ import type { VercelConfig } from "@vercel/config/v1";
 // workspace is prepared and built locally, then deployed as a prebuilt output.
 export const config: VercelConfig = {
   framework: "nextjs",
-  bunVersion: "1.x",
+  bunVersion: "1.4.x",
   installCommand: "",
   buildCommand: "bun run build",
 };

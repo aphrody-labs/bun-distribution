@@ -1,3 +1,7 @@
+# Next resolves its own mode-aware .env files (.env.production.local, .env.development.local…).
+# Bun's automatic loading would inject them before Next with the wrong mode.
+env = false
+
 # Tests website : globals DOM (document/window) via happy-dom (cf. https://bun.com/docs/test/dom).
 # Le preload happydom.ts vit a cote de ce bunfig.
 [test]
