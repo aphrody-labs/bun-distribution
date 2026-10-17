@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 
   outputFileTracingRoot: buildRoot,
+  // Vercel optimise les images en amont : l'addon natif de sharp n'a rien à faire dans les fonctions.
+  outputFileTracingExcludes: { "*": ["node_modules/sharp/**", "node_modules/@img/**"] },
   turbopack: {
     root: buildRoot,
   },
@@ -72,7 +74,6 @@ const nextConfig: NextConfig = {
     "googleapis",
     "nodemailer",
     "pg",
-    "sharp",
     "stripe",
     "pica",
     "xlsx",

@@ -193,7 +193,6 @@
     "babel-plugin-react-compiler": "catalog:",
     "jsdom": "catalog:",
     "shadcn": "catalog:",
-    "sharp": "catalog:",
     "tailwindcss": "catalog:",
     "tailwindcss-animate": "catalog:",
     "typescript": "catalog:",

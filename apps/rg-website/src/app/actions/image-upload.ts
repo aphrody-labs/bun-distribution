@@ -1,15 +1,15 @@
 "use server";
 
-import sharp from "sharp";
 import { requireEditorOrFail } from "@/lib/auth-helpers";
 import { createPostgresClient } from "@rosegriffon/db/service";
 
 // --- Configuration ---
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
+// AVIF/HEIC dépendent des codecs de l'OS et ne se décodent pas sous Linux (Vercel).
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const MAX_PIXELS = 8192 * 8192;
 const STORAGE_BUCKET = "article";
-const BASE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://azalee.rosegriffon.fr/storage/v1/object/public";
 
 interface ImageVariant {
   suffix: string;
@@ -50,7 +50,7 @@ async function verifyEditorRole(): Promise<{ error?: string }> {
 
 function validateFile(file: File): string | null {
   if (!ALLOWED_TYPES.has(file.type)) {
-    return `Type de fichier non supporté (${file.type}). Types acceptés : JPEG, PNG, WebP, AVIF, GIF.`;
+    return `Type de fichier non supporté (${file.type}). Types acceptés : JPEG, PNG, WebP, GIF.`;
   }
   if (file.size > MAX_FILE_SIZE) {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
@@ -59,28 +59,38 @@ function validateFile(file: File): string | null {
   return null;
 }
 
-async function processAndUpload(inputBuffer: Buffer, filenameBase: string): Promise<UploadResult | { error: string }> {
+interface CropRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/** Bound of the box used to fit a variant by width only (aspect ratio kept). */
+const MAX_DIMENSION = 16_384;
+
+function isUnsupportedFormat(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === "ERR_IMAGE_FORMAT_UNSUPPORTED";
+}
+
+async function processAndUpload(
+  input: Uint8Array,
+  filenameBase: string,
+  crop?: CropRect,
+): Promise<UploadResult | { error: string }> {
   const supabase = createPostgresClient();
-  const metadata = await sharp(inputBuffer).metadata();
 
-  if (!metadata.width || !metadata.height) {
-    return { error: "Impossible de lire les dimensions de l'image" };
-  }
-
-  // Générer toutes les variantes en parallèle
+  // Chaque variante part des octets source : Bun.Image décode hors du thread JS.
   const uploads = VARIANTS.map(async variant => {
     const filename = `${filenameBase}${variant.suffix}.webp`;
+    const image = new Bun.Image(input, { maxPixels: MAX_PIXELS });
+    if (crop) image.extract(crop);
+    const bytes = await image
+      .resize(variant.width, MAX_DIMENSION, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: variant.quality })
+      .bytes();
 
-    const buffer = await sharp(inputBuffer)
-      .resize({
-        fit: "inside",
-        width: variant.width,
-        withoutEnlargement: true,
-      })
-      .webp({ effort: 4, quality: variant.quality })
-      .toBuffer();
-
-    const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(filename, buffer, {
+    const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(filename, bytes, {
       cacheControl: "public, max-age=31536000, immutable",
       contentType: "image/webp",
       upsert: false,
@@ -91,27 +101,29 @@ async function processAndUpload(inputBuffer: Buffer, filenameBase: string): Prom
       throw new Error(`Upload échoué pour la variante ${variant.suffix || "full"}`);
     }
 
-    return `${BASE_URL}/${STORAGE_BUCKET}/${filename}`;
+    return {
+      height: image.height,
+      url: supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filename).data.publicUrl,
+      width: image.width,
+    };
   });
 
   try {
-    const [fullUrl, cardUrl, thumbUrl] = await Promise.all(uploads);
-
-    // Dimensions de la variante principale (après resize)
-    const resizedMeta = await sharp(inputBuffer)
-      .resize({ fit: "inside", width: VARIANTS[0].width, withoutEnlargement: true })
-      .metadata();
-
-    return {
-      cardUrl,
-      height: resizedMeta.height || metadata.height,
-      thumbUrl,
-      url: fullUrl,
-      width: resizedMeta.width || metadata.width,
-    };
+    const [full, card, thumb] = await Promise.all(uploads);
+    return { cardUrl: card.url, height: full.height, thumbUrl: thumb.url, url: full.url, width: full.width };
   } catch (error) {
     console.error("Image processing failed:", error);
+    if (isUnsupportedFormat(error)) return { error: "Format d'image non pris en charge par le serveur" };
     return { error: error instanceof Error ? error.message : "Échec du traitement de l'image" };
+  }
+}
+
+async function readDimensions(input: Uint8Array): Promise<{ width: number; height: number } | null> {
+  try {
+    const { width, height } = await new Bun.Image(input, { maxPixels: MAX_PIXELS }).metadata();
+    return width && height ? { height, width } : null;
+  } catch {
+    return null;
   }
 }
 
@@ -138,10 +150,12 @@ export async function uploadImage(formData: FormData): Promise<UploadResult | { 
       return { error: authError.error };
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filenameBase = crypto.randomUUID();
+    const input = new Uint8Array(await file.arrayBuffer());
+    if (!(await readDimensions(input))) {
+      return { error: "Impossible de lire les dimensions de l'image" };
+    }
 
-    return await processAndUpload(buffer, filenameBase);
+    return await processAndUpload(input, crypto.randomUUID());
   } catch (error) {
     console.error("Image upload failed:", error);
     return { error: "Échec de l'upload de l'image" };
@@ -179,10 +193,10 @@ export async function uploadImageWithCrop(formData: FormData): Promise<UploadRes
       return { error: authError.error };
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const metadata = await sharp(buffer).metadata();
+    const input = new Uint8Array(await file.arrayBuffer());
+    const metadata = await readDimensions(input);
 
-    if (!metadata.width || !metadata.height) {
+    if (!metadata) {
       return { error: "Impossible de lire les dimensions de l'image" };
     }
 
@@ -198,14 +212,8 @@ export async function uploadImageWithCrop(formData: FormData): Promise<UploadRes
     const safeWidth = Math.max(1, Math.min(width, metadata.width - safeLeft));
     const safeHeight = Math.max(1, Math.min(height, metadata.height - safeTop));
 
-    // Extraire la zone de crop
-    const croppedBuffer = await sharp(buffer)
-      .extract({ height: safeHeight, left: safeLeft, top: safeTop, width: safeWidth })
-      .toBuffer();
-
-    const filenameBase = crypto.randomUUID();
-
-    return await processAndUpload(croppedBuffer, filenameBase);
+    const crop = { height: safeHeight, left: safeLeft, top: safeTop, width: safeWidth };
+    return await processAndUpload(input, crypto.randomUUID(), crop);
   } catch (error) {
     console.error("Image crop upload failed:", error);
     return { error: "Échec de l'upload de l'image recadrée" };
