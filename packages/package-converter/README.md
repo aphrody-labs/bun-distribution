@@ -64,3 +64,102 @@ Format references: [Debian binary archives](https://manpages.debian.org/unstable
 [SRCINFO](https://man.archlinux.org/man/SRCINFO.5.en),
 [Cygwin package hints](https://cygwin.com/packaging-hint-files.html),
 [WinGet manifests](https://learn.microsoft.com/en-us/windows/package-manager/package/manifest).
+
+## pacman2apt
+
+`pacman2apt` converts Arch-family binary packages (CachyOS `cachyos-v3`,
+`cachyos-core-v3`, `cachyos-extra-v3` and `cachyos`, Arch `core`, `extra` and
+`multilib`, and the Omarchy repository) into Ubuntu `.deb` packages and serves
+them from a flat local APT repository. Repository names, mirror templates, the
+x86-64 level and signing keys come from the factory catalogs
+(`factory/arch/cachyos/integration.json`, `factory/arch/omarchy/integration.json`
+and `pacmanRepositories()` in `factory/arch/index.ts`); the order is the
+pacman.conf order, so the first repository that has a name wins.
+
+```sh
+pacman2apt sync                       # pacman .files databases + Ubuntu index into bun:sqlite
+pacman2apt resolve gamescope          # show the dependency mapping only
+pacman2apt convert gamescope --prefix /opt/pacman2apt/{name}
+pacman2apt convert proton-cachyos-slr --out /var/lib/aphrody-apt/pacman2apt
+pacman2apt repo /var/lib/aphrody-apt/pacman2apt
+pacman2apt install mise-bin crush-bin # convert + publish + apt-get install --no-remove
+```
+
+The same commands are available as `package-converter pacman2apt ...`. State
+(index, downloaded packages, Ubuntu indices) lives in `--state DIR`, default
+`$PACMAN2APT_STATE` or `~/.cache/pacman2apt`.
+
+**sync** downloads `<repo>.files` (a superset of `<repo>.db`) from the catalog
+mirrors and indexes name, version, filename, SHA-256, sizes, depends, provides
+(including automatic soname provides such as `libfoo.so=1-64`), conflicts,
+replaces, executables and shared-library file names. x86-64-v3 repositories are
+skipped on hosts without AVX2/BMI2/FMA/MOVBE unless `--isa x86-64-v3` is given.
+It then indexes the Ubuntu series reported by `/etc/os-release`
+(`VERSION_CODENAME`, or `--series` on another host): `InRelease` of the release,
+`-updates` and `-security` suites (verified with `gpgv` and the Ubuntu archive
+keyring when present; 26.10 publishes SHA512 checksums only), `Packages.gz` for
+amd64 and i386, and `Contents-amd64.gz`/`Contents-i386.gz`. Every path is folded
+to its merged-`/usr` form; shared-library names are indexed by directory class
+(multiarch, `lib`, `lib64`, `lib32`, i386 multiarch).
+
+**convert** downloads the package from its repository, verifies the database
+SHA-256 and every payload file against the package's own `.MTREE`, and streams
+the payload into a root-owned `data.tar.zst` (Zstandard streams; no in-memory
+size limit for large trees such as Proton). ELF objects are analysed for
+`DT_NEEDED`, `DT_SONAME`, run paths and `GLIBC_`/`GLIBCXX_`/`CXXABI_` version
+requirements; conversion is refused when a requirement exceeds the target (probed
+from the host's `libc.so.6` and `libstdc++.so.6`, otherwise `data/pacman2apt.json`).
+Libraries shipped by the package itself are internal and do not create
+dependencies or ABI requirements.
+
+Dependencies are mapped in this order: curated `override` entries, soname
+provides (`libfoo.so=1-64`), curated `map` entries for non-library and virtual
+names (`data/pacman2apt.json`), then the Arch package that owns or provides the
+name: the sonames of it that the payload actually links (precise runtime
+packages), otherwise all of its shared libraries resolved against Ubuntu
+Contents plus the Ubuntu owner of its executables; finally an Ubuntu package or
+virtual package of the same name. Remaining dependencies that exist in a pacman database are converted
+recursively with `--with-deps`; otherwise conversion stops and lists them
+(`--skip-dep NAME` or `--allow-unresolved` drop them explicitly). Protected names
+(glibc, gcc-libs, mesa, systemd, kernels, pacman, …) are never converted. Sonames
+linked by the payload but not covered by a mapped dependency are added as
+`Depends` (`--elf-deps recommends|none` relaxes this for self-contained trees).
+
+Versions map `[epoch:]pkgver-pkgrel` to `[epoch:]pkgver-pkgrel+pacman2apt`. The
+Debian name is the pacman name; when Ubuntu already has that name the repository
+family suffix is appended (`gamescope-cachyos`), so the conversion never
+upgrades or replaces an Ubuntu package. `Provides`, `Conflicts` and `Replaces`
+are kept only for names outside the Ubuntu archive. Files under `etc/` become
+conffiles; non-root owners and extended attributes (file capabilities) are not
+representable in dpkg and are reported.
+
+Every shipped path is checked against Ubuntu Contents, the installed dpkg file
+lists and the live filesystem. Any overlap stops the conversion with a report;
+`--prefix /opt/pacman2apt/{name}` relocates a self-contained tree (absolute
+symlinks into the tree are rewritten, scripts and hooks are disabled).
+
+`.INSTALL` functions become maintainer scripts when they are plain shell
+(pacman-specific tools such as `pacman`, `mkinitcpio` or `pacman-key` disable the
+translation): `pre_install`/`pre_upgrade` in `preinst`, `post_install`/
+`post_upgrade` in `postinst`, `pre_remove` in `prerm`, `post_remove` in `postrm`;
+failures are reported but ignored, like pacman. libalpm hook effects map to dpkg
+triggers (`ldconfig`, `/usr/share/icons/hicolor`, `/usr/share/applications`,
+`/usr/share/glib-2.0/schemas`, `/usr/share/mime/packages`, `/usr/share/fonts`,
+`/usr/lib/udev/hwdb.d`, `/usr/lib/sysctl.d`, `/usr/lib/binfmt.d`) and to
+`postinst` snippets for systemd `daemon-reload`, `systemd-sysusers`,
+`systemd-tmpfiles --create` and `udevadm control --reload`. Units are never
+enabled or started. Each `.deb` has a `.pacman2apt.json` report beside it.
+
+**repo DIR** writes `Packages`, `Packages.zst` and `Release` (MD5/SHA256) for the
+`.deb` files in `DIR`. **install** (Linux target) converts into the repository
+(default `/var/lib/aphrody-apt/pacman2apt`), writes
+`/etc/apt/sources.list.d/pacman2apt.sources` (`Trusted: yes` local file
+repository), updates only that source, simulates `apt-get install --no-remove`
+and refuses plans that remove packages or upgrade glibc, Mesa, systemd or udev,
+then installs. Privileged steps use `sudo -n` when not run as root.
+
+Limits: pacman database signatures (`.sig`) are not verified (package SHA-256
+from the database and `.MTREE` digests are); xz-compressed packages need
+recompression; dependency version constraints are kept only between converted
+packages; Arch and Ubuntu library ABIs with the same soname are assumed
+compatible; kernel modules are shipped without `depmod`.

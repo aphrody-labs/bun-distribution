@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: MIT
 import { convert, type ConversionOptions } from "./convert.ts";
 import { inspect } from "./metadata.ts";
+import { runPacman2AptCLI } from "./pacman2apt.ts";
 import { type Ecosystem, type InputFormat } from "./types.ts";
 
 const USAGE = `package-converter inspect|convert INPUT --format FORMAT --ecosystem ECOSYSTEM
+package-converter pacman2apt sync|resolve|convert|repo|install ... (see pacman2apt --help)
 Formats: deb, deb822, pkginfo, srcinfo, cygwin, alpm-archive, source-archive
 Ecosystems: debian, ubuntu, cosmic, alpm, msys2, mingw, cygwin
 Convert: --package NAME --out NEW_DIRECTORY [--source-base URL] [--extract-sources]
@@ -17,6 +19,7 @@ export async function runPackageCLI(
   args: string[] = Bun.argv.slice(2),
 ): Promise<void> {
   args = [...args];
+  if (args[0] === "pacman2apt") return runPacman2AptCLI(args.slice(1));
   if (!args.length || args.includes("--help")) {
     console.log(USAGE);
     return;

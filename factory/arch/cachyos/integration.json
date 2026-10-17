@@ -5,6 +5,40 @@
   "observedAt": "2026-10-16",
   "implementation": "declarative-inputs-only",
   "rootBuilder": "The existing Bun OS factory graph owns source acquisition, native host admission, package building, qualification and release. This directory adds no runner, installer, host registry or package-manager implementation.",
+  "repositories": [
+    {
+      "name": "cachyos-v3",
+      "family": "cachyos",
+      "arch": "x86_64_v3",
+      "isa": "x86-64-v3",
+      "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
+      "signingKey": "F3B607488DB35A47"
+    },
+    {
+      "name": "cachyos-core-v3",
+      "family": "cachyos",
+      "arch": "x86_64_v3",
+      "isa": "x86-64-v3",
+      "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
+      "signingKey": "F3B607488DB35A47"
+    },
+    {
+      "name": "cachyos-extra-v3",
+      "family": "cachyos",
+      "arch": "x86_64_v3",
+      "isa": "x86-64-v3",
+      "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
+      "signingKey": "F3B607488DB35A47"
+    },
+    {
+      "name": "cachyos",
+      "family": "cachyos",
+      "arch": "x86_64",
+      "isa": "x86-64",
+      "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
+      "signingKey": "F3B607488DB35A47"
+    }
+  ],
   "packageManager": {
     "owner": "root common Pacman/libalpm capability",
     "selection": "pacman",

@@ -4,12 +4,14 @@
   "private": true,
   "license": "MIT",
   "bin": {
-    "package-converter": "src/cli.ts"
+    "package-converter": "src/cli.ts",
+    "pacman2apt": "src/pacman2apt.ts"
   },
   "type": "module",
   "exports": {
     ".": "./src/convert.ts",
-    "./metadata": "./src/metadata.ts"
+    "./metadata": "./src/metadata.ts",
+    "./pacman2apt": "./src/pacman2apt.ts"
   },
   "dependencies": {
     "@aphrody/bun-workspace": "workspace:*"

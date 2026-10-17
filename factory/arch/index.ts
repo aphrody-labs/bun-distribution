@@ -1,5 +1,7 @@
 import { join } from "node:path";
 import { planChimeraOs } from "./chimeraos/index.ts";
+import cachyosIntegration from "./cachyos/integration.json";
+import omarchyIntegration from "./omarchy/integration.json";
 
 export type Composition = "server" | "desktop" | "gaming";
 export const compositions: Composition[] = ["server", "desktop", "gaming"];
@@ -68,4 +70,39 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
     qualified: false,
     blockers,
   };
+}
+
+export interface PacmanRepository {
+  name: string;
+  family: "cachyos" | "archlinux" | "omarchy";
+  /** Mirror architecture directory, for example x86_64 or x86_64_v3. */
+  arch: string;
+  /** Minimum x86-64 microarchitecture level required by the binaries. */
+  isa: "x86-64" | "x86-64-v3";
+  /** pacman Server templates with $repo and $arch. */
+  servers: string[];
+  signingKey?: string;
+}
+
+const archOfficial: PacmanRepository[] = ["core", "extra", "multilib"].map((name) => ({
+  name,
+  family: "archlinux",
+  arch: "x86_64",
+  isa: "x86-64",
+  servers: ["https://geo.mirror.pkgbuild.com/$repo/os/$arch", "https://mirrors.kernel.org/archlinux/$repo/os/$arch"],
+}));
+
+/** Binary repositories in pacman.conf order: CachyOS optimized, CachyOS generic, Arch, Omarchy. */
+export function pacmanRepositories(): PacmanRepository[] {
+  return [
+    ...(cachyosIntegration.repositories as PacmanRepository[]),
+    ...archOfficial,
+    ...(omarchyIntegration.repositories as PacmanRepository[]),
+  ];
+}
+
+export function repositoryUrls(repository: PacmanRepository, file: string): string[] {
+  return repository.servers.map(
+    (server) => `${server.replaceAll("$repo", repository.name).replaceAll("$arch", repository.arch)}/${file}`,
+  );
 }

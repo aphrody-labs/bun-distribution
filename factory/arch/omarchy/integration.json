@@ -7,6 +7,17 @@
   "qualified": false,
   "executable": false,
   "packageManager": "pacman/libalpm",
+  "repositories": [
+    {
+      "name": "omarchy",
+      "family": "omarchy",
+      "arch": "x86_64",
+      "isa": "x86-64",
+      "servers": ["https://pkgs.omarchy.org/stable/$arch"],
+      "signingKey": "40DFB630FF42BCFFB047046CF0134EE680CAC571",
+      "evidence": "Omarchy pacman.conf: [omarchy] Server = https://pkgs.omarchy.org/$channel/$arch"
+    }
+  ],
   "catalogs": {
     "sources": "factory/arch/omarchy/source.json",
     "packages": "factory/arch/omarchy/packages.json",
