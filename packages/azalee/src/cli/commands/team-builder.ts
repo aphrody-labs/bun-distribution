@@ -1,4 +1,4 @@
-import { getDatabaseURL } from "@rosegriffon/db/pg";
+import { getDatabaseURL, getInagleDatabaseURL } from "@rosegriffon/db/pg";
 /**
  * `azalee team-builder` — gestion et génération de compositions d'équipe.
  *
@@ -353,9 +353,10 @@ export function registerTeamBuilderCommand(program: Command): void {
           }
 
           // Staff technique.
-          await client.connect();
-          const resCoordinators = await client.query<any>("SELECT * FROM inagle_coordinators");
-          await client.end();
+          const inagleClient = createPgClient(getInagleDatabaseURL());
+          await inagleClient.connect();
+          const resCoordinators = await inagleClient.query<any>("SELECT * FROM inagle_coordinators");
+          await inagleClient.end();
 
           const coaches = resCoordinators.rows.filter((r: any) => r.role === "Manager" || r.role === "Coach");
           const managers = resCoordinators.rows.filter((r: any) => r.role === "Coordinator");
