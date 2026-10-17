@@ -1,0 +1,23 @@
+{
+  "name": "@bun-os/ds-dotnet",
+  "version": "1.4.4",
+  "private": true,
+  "description": "Nintendo DS and 3DS managed format readers (Kuriimu2 Konnect plugins, SPICA H3D, pk3DS ExeFS) hosted in Bun through bun:dotnet.",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "bun": "=1.4.4"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./build": "./src/build.ts",
+    "./cli": "./src/cli.ts"
+  },
+  "bin": {
+    "ds-dotnet": "./src/cli.ts"
+  },
+  "scripts": {
+    "build": "bun run ./src/build.ts",
+    "inspect": "bun run ./src/cli.ts"
+  }
+}

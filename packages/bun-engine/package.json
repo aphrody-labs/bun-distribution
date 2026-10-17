@@ -33,6 +33,7 @@
   "dependencies": {
     "@aphrody/bun-steam": "workspace:*",
     "@aphrody/typesafe-sdk": "0.6.2",
+    "@bun-os/ds-dotnet": "workspace:*",
     "@bun-os/re": "workspace:*"
   },
   "engines": {

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Kuriimu2 Nintendo and Level-5 file plugins compiled in place against the in-tree Konnect libraries
+       (the upstream plugin projects restore Konnect from an authenticated GitHub NuGet feed). GPL-3.0. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Aphrody.Ds.Plugins</AssemblyName>
+    <RootNamespace>Aphrody.Ds.Plugins</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);CS8618;CS8600;CS8601;CS8602;CS8603;CS8604;CS8625;CS0168;CS0219;CS0649;CS0169;CS0414;CS8981;CS1998</NoWarn>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <VendorRoot>$(MSBuildThisFileDirectory)../../../../vendor/kuriimu2/</VendorRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(VendorRoot)plugins/Nintendo/plugin_nintendo/**/*.cs" Exclude="$(VendorRoot)plugins/Nintendo/plugin_nintendo/obj/**;$(VendorRoot)plugins/Nintendo/plugin_nintendo/bin/**" />
+    <Compile Include="$(VendorRoot)plugins/Level5/plugin_level5/**/*.cs" Exclude="$(VendorRoot)plugins/Level5/plugin_level5/obj/**;$(VendorRoot)plugins/Level5/plugin_level5/bin/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(VendorRoot)src/lib/Konnect/Konnect.csproj" Private="false" />
+    <ProjectReference Include="$(VendorRoot)src/lib/Kryptography/Kryptography.csproj" Private="false" />
+    <ProjectReference Include="$(VendorRoot)src/lib/Kaligraphy/Kaligraphy.csproj" Private="false" />
+  </ItemGroup>
+</Project>

@@ -867,6 +867,7 @@
       "dependencies": {
         "@aphrody/bun-steam": "workspace:*",
         "@aphrody/typesafe-sdk": "0.6.2",
+        "@bun-os/ds-dotnet": "workspace:*",
         "@bun-os/re": "workspace:*",
       },
     },
@@ -3630,6 +3631,13 @@
         "@tanstack/react-query",
         "react",
       ],
+    },
+    "packages/ds-dotnet": {
+      "name": "@bun-os/ds-dotnet",
+      "version": "1.4.4",
+      "bin": {
+        "ds-dotnet": "./src/cli.ts",
+      },
     },
     "packages/eslint-plugin-m3": {
       "name": "@aphrody/eslint-plugin-m3",
@@ -6718,6 +6726,8 @@
     "@bramus/specificity": ["@bramus/specificity@2.4.3", "", { "dependencies": { "css-tree": "^3.2.1" }, "bin": { "specificity": "bin/cli.js" } }, "sha512-0GEz8qJWokkUVYQYRukmkSHIFNoBH8QTreeHrAFbvz1XFYc3Y+puhMs8PQ5x8GNugiC2l5jvDBXKLbBIByeSBw=="],
 
     "@bufbuild/protobuf": ["@bufbuild/protobuf@2.16.0", "", {}, "sha512-FWa0sPlqYGJgpTs6OxBRcL/AW4JT0OIO+W1ajerluoTVh8CV0B7XM1qsNCRgnkSCkRCgOICKHRQlY17jrsm0+Q=="],
+
+    "@bun-os/ds-dotnet": ["@bun-os/ds-dotnet@workspace:packages/ds-dotnet"],
 
     "@bun-os/package-converter": ["@bun-os/package-converter@workspace:packages/package-converter"],
 

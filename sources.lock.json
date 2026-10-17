@@ -1373,6 +1373,38 @@
       "mount": "vendor/steam/valvekeyvalue",
       "branch": "master",
       "gitlinks": []
+    },
+    {
+      "id": "vendor/kuriimu2",
+      "repository": "FanTranslatorsInternational/Kuriimu2",
+      "revision": "6babcdc3562975f445f258f0b7f1d9bd8e5e2a83",
+      "mount": "vendor/kuriimu2",
+      "branch": "imgui",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/spica",
+      "repository": "gdkchan/SPICA",
+      "revision": "bd29a7828595d7839cda2ac61c76bb63f9071250",
+      "mount": "vendor/spica",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/pk3ds",
+      "repository": "kwsch/pk3DS",
+      "revision": "6daaca934ca2284a73ab743bf89c848c57cd9de1",
+      "mount": "vendor/pk3ds",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/tinke",
+      "repository": "pleonex/tinke",
+      "revision": "3263fc2baeea40c847e5267f826730210864fb8c",
+      "mount": "vendor/tinke",
+      "branch": "master",
+      "gitlinks": []
     }
   ]
 }
