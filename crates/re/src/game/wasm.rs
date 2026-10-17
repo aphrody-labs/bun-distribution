@@ -209,7 +209,8 @@ pub fn wasm_model_glb(
     api::model_glb(name, emd, emb.as_deref(), esk.as_deref()).map_err(to_js_err)
 }
 
-/// Remux a USM: returns `{ extension, bytes }` (mp4 for H.264, webm for VP9).
+/// Remux a USM (needs the `dbxv2` feature): returns `{ extension, bytes }` (mp4 for H.264, webm for VP9).
+#[cfg(feature = "dbxv2")]
 #[wasm_bindgen]
 pub fn wasm_usm_to_video(bytes: &[u8]) -> Result<js_sys::Object, JsValue> {
     let (out, extension) = api::usm_to_video(bytes).map_err(to_js_err)?;

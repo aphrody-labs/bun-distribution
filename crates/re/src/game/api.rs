@@ -63,9 +63,25 @@ const KNOWN: [&str; 46] = [
     "qml", "tsd", "tnl", "tsr", "iggy", "gfx", "spm",
 ];
 
+#[cfg(feature = "dbxv2")]
+fn bare_audio(bytes: &[u8]) -> Option<&'static str> {
+    use aphrody_nie_formats::cri_audio::{is_adx, is_hca};
+    if is_hca(bytes) {
+        Some("hca")
+    } else if is_adx(bytes) {
+        Some("adx")
+    } else {
+        None
+    }
+}
+
+#[cfg(not(feature = "dbxv2"))]
+fn bare_audio(_bytes: &[u8]) -> Option<&'static str> {
+    None
+}
+
 /// Identify a buffer by magic first, then by the extension of `file_name`.
 pub fn identify(bytes: &[u8], file_name: &str) -> FormatInfo {
-    use aphrody_nie_formats::cri_audio::{is_adx, is_hca};
     let tag = bytes.get(..4).unwrap_or(&[]);
     let by_magic: Option<&'static str> = match tag {
         b"CPK " => Some("cpk"),
@@ -87,9 +103,7 @@ pub fn identify(bytes: &[u8], file_name: &str) -> FormatInfo {
         b"#CUS" => Some("cus"),
         b"#PUP" => Some("pup"),
         b"#MSG" => Some("msg"),
-        _ if is_hca(bytes) => Some("hca"),
-        _ if is_adx(bytes) => Some("adx"),
-        _ => None,
+        _ => bare_audio(bytes),
     };
     let extension = file_name
         .rsplit_once('.')
@@ -410,12 +424,14 @@ pub fn model_glb(
     assemble(name, emd, emb, esk)?.to_glb()
 }
 
+#[cfg(feature = "dbxv2")]
 fn usm_error(error: FormatError) -> ReError {
     ReError::ParseError { context: "usm", details: error.to_string() }
 }
 
 /// Remux a CRI USM to a browser-playable container: MP4 for H.264, WebM for VP9. Returns the
 /// bytes and the extension.
+#[cfg(feature = "dbxv2")]
 pub fn usm_to_video(bytes: &[u8]) -> Result<(Vec<u8>, &'static str)> {
     use aphrody_nie_formats::usm;
     let usm = usm::demuxer(bytes).map_err(usm_error)?;
