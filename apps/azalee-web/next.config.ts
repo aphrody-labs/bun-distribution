@@ -179,21 +179,18 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    // Storage self-host : nginx intercepte déjà /storage/v1/ et le route vers
-    // rg-storage.service (127.0.0.1:8810). Ce rewrite reste le filet de repli
-    // quand l'app est servie sans nginx devant (dev local, healthcheck direct).
-    const storageUrl =
-      process.env.SUPABASE_INTERNAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:8811";
-
-    const destination = storageUrl.startsWith("http")
-      ? `${storageUrl}/storage/v1/:path*`
-      : "http://127.0.0.1:8811/storage/v1/:path*";
+    // Les URL relatives `/storage/v1/…` sont relayées vers Supabase Storage
+    // (Supabase Cloud) ; sans passerelle configurée, la surface n'existe pas.
+    const storageUrl = (process.env.SUPABASE_INTERNAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(
+      /\/+$/,
+      "",
+    );
+    const storage = storageUrl.startsWith("http")
+      ? [{ destination: `${storageUrl}/storage/v1/:path*`, source: "/storage/v1/:path*" }]
+      : [];
 
     return [
-      {
-        destination,
-        source: "/storage/v1/:path*",
-      },
+      ...storage,
       {
         destination: "https://azalee.rosegriffon.fr/zukan-assets-mirror/:path*",
         source: "/zukan/assets/:path*",

@@ -26,8 +26,10 @@ const clients = new Map<string, Kysely<never>>();
 
 export function createAchilleaSql<DB extends object = never>(options: AchilleaSqlOptions = {}): Kysely<DB> {
   const url = options.url ?? getAchilleaDatabaseUrl();
-  const maxConnections = options.maxConnections ?? 8;
-  const key = `${url}\u0000${maxConnections}`;
+  // Undefined defers to `DATABASE_POOL_MAX` (capped at 4 by `createPgPool`): a
+  // serverless instance must not open more than a handful of pooler sessions.
+  const maxConnections = options.maxConnections;
+  const key = `${url}\u0000${maxConnections ?? "env"}`;
   const existing = clients.get(key);
   if (existing) return existing as unknown as Kysely<DB>;
 

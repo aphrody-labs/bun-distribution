@@ -37,24 +37,26 @@ export interface ServiceHealth {
   error?: string;
 }
 
+/** Passerelle Supabase Cloud du projet, sans barre oblique finale. */
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");
+
 /**
- * Les services HTTP qui remplacent Supabase Cloud depuis le 11/8/2026.
+ * Les services Supabase Cloud dont dépend la pile : Storage et Realtime.
  *
- * Sondés sur leur boucle locale : c'est l'état du service lui-même qui
- * intéresse ici, pas celui de nginx ni du DNS.
+ * Sondés sans clé : Storage expose `/status` publiquement, et la passerelle
+ * Realtime répond 401 à une requête anonyme, ce qui suffit à la dire joignable.
  */
 const SERVICES: { name: string; url: string; role: string; expect?: number[] }[] = [
   {
-    expect: [200, 404],
     name: "Storage",
-    role: "Fichiers (/storage/v1) — index dans storage.objects",
-    url: "http://127.0.0.1:8810/",
+    role: "Supabase Storage (/storage/v1) — index dans storage.objects",
+    url: `${SUPABASE_URL}/storage/v1/status`,
   },
   {
-    expect: [200, 400, 404],
+    expect: [200, 401],
     name: "Realtime",
-    role: "Flux SSE (/realtime/v1) — LISTEN/NOTIFY",
-    url: "http://127.0.0.1:8812/",
+    role: "Supabase Realtime (Broadcast) — passerelle joignable",
+    url: `${SUPABASE_URL}/realtime/v1/api/ping`,
   },
 ];
 

@@ -6,17 +6,11 @@ import { wikiController } from "./modules/wiki";
 import { communityController } from "./modules/community";
 import { contentController } from "./modules/content";
 import { billingController } from "./modules/billing";
-import { storageController } from "./modules/storage";
-import { realtimeController } from "./modules/realtime";
 import { inagleModule } from "./modules/inagle";
 import { azaleeBridgeModule } from "./modules/azalee-bridge";
 import { authController } from "./modules/auth";
 import { dbPlugin } from "./plugins/db";
 import { elysiaAuth } from "@rosegriffon/auth/elysia";
-
-import { handleStorage } from "@rosegriffon/storage/server";
-import { handleRealtime, startRealtimeListener } from "@rosegriffon/realtime/server";
-import { handleCdn } from "@rosegriffon/cdn/server";
 
 const allowedOrigins = new Set(
   [
@@ -70,19 +64,6 @@ export const app = new Elysia()
     uptime: process.uptime(),
     timestamp: Date.now(),
   }))
-  // Surface Supabase Storage unifiée (remplace rg-storage:8810)
-  .all("/storage/v1/*", ({ request }) => handleStorage(request))
-  .all("/storage/v1", ({ request }) => handleStorage(request))
-
-  // Surface Supabase Realtime SSE unifiée (remplace rg-realtime:8812)
-  .all("/realtime/v1/*", ({ request }) => handleRealtime(request))
-  .all("/realtime/v1", ({ request }) => handleRealtime(request))
-
-  // Surface CDN unifiée (remplace rg-cdn:8801)
-  .all("/upload", ({ request }) => handleCdn(request))
-  .all("/images/*", ({ request }) => handleCdn(request))
-  .all("/api/assets/*", ({ request }) => handleCdn(request))
-  .all("/cdn/health", ({ request }) => handleCdn(request))
   .group("/v1", v1 =>
     v1
       .use(achilleaModule)
@@ -90,8 +71,6 @@ export const app = new Elysia()
       .use(communityController)
       .use(contentController)
       .use(billingController)
-      .use(storageController)
-      .use(realtimeController)
       .use(inagleModule)
       .use(azaleeBridgeModule)
       .use(authController),
@@ -101,12 +80,8 @@ const PORT = Number(process.env.API_PORT ?? 8800);
 const HOST = process.env.API_HOST ?? "0.0.0.0";
 
 export function startApiServer(port = PORT, host = HOST) {
-  void startRealtimeListener();
   return app.listen({ port, hostname: host }, () => {
     console.info(`[rg-api] Rose Griffon Unified API listening on http://${host}:${port}`);
-    console.info(
-      `[rg-api] Unified services active: API (:${port}), Storage (/storage/v1), Realtime (/realtime/v1), CDN (/upload, /images)`,
-    );
     console.info(`[rg-api] OpenAPI documentation available on http://${host}:${port}/docs`);
   });
 }

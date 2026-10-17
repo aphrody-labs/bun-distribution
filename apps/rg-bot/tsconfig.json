@@ -14,6 +14,6 @@
     "allowImportingTsExtensions": true,
     "moduleDetection": "force"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "vercel.ts"],
   "exclude": ["node_modules", "dist"]
 }

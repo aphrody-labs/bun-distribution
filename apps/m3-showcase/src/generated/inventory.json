@@ -5143,17 +5143,6 @@
     "bin": []
   },
   {
-    "name": "@rosegriffon/cdn",
-    "version": "1.4.4",
-    "description": "",
-    "dir": "packages/rg-cdn",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 2,
-    "bin": []
-  },
-  {
     "name": "@rosegriffon/config",
     "version": "1.4.4",
     "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
@@ -5277,17 +5266,6 @@
     "bin": []
   },
   {
-    "name": "@rosegriffon/realtime",
-    "version": "1.4.4",
-    "description": "",
-    "dir": "packages/rg-realtime",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 2,
-    "bin": []
-  },
-  {
     "name": "@rosegriffon/search",
     "version": "1.4.4",
     "description": "Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa",
@@ -5296,17 +5274,6 @@
     "workspace": true,
     "private": false,
     "exports": 1,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/storage",
-    "version": "1.4.4",
-    "description": "",
-    "dir": "packages/rg-storage",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 2,
     "bin": []
   },
   {

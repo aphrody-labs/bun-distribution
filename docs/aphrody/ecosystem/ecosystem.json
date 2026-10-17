@@ -2333,12 +2333,6 @@
           "bins": []
         },
         {
-          "name": "@rosegriffon/cdn",
-          "path": "packages/rg/cdn",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@rosegriffon/config",
           "path": "packages/rg/config",
           "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
@@ -2407,21 +2401,9 @@
           "bins": []
         },
         {
-          "name": "@rosegriffon/realtime",
-          "path": "packages/rg/realtime",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@rosegriffon/search",
           "path": "packages/rg/search",
           "description": "Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/storage",
-          "path": "packages/rg/storage",
-          "description": "",
           "bins": []
         },
         {
@@ -10291,7 +10273,7 @@
     "sharedRepos": 0,
     "crates": 198,
     "binaries": 36,
-    "bunPackages": 72,
+    "bunPackages": 69,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,

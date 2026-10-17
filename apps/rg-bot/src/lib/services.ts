@@ -21,11 +21,12 @@
  * topologie que le VPS.
  *
  * L'API de données Azalée est un montage de `rg-api` : il n'y a plus de daemon
- * headless ni de port dédié à superviser.
+ * headless ni de port dédié à superviser. Le stockage et le temps réel sont
+ * ceux de Supabase Cloud : aucun service maison ne les sert plus.
  */
 
 /** Identifiants stables des services. Sert de clé partout ailleurs. */
-export type NomService = "rg-api" | "cdn" | "storage" | "realtime" | "wiki" | "site";
+export type NomService = "rg-api" | "cdn" | "wiki" | "site";
 
 export interface DescriptionService {
   /** Clé stable. */
@@ -67,29 +68,11 @@ export const SERVICES: Readonly<Record<NomService, DescriptionService>> = {
   cdn: {
     nom: "cdn",
     titre: "CDN",
-    base: local(8801, "CDN_API_URL"),
+    base: publique("CDN_API_URL", publique("CDN_URL", "https://cdn.rosegriffon.fr")),
     sante: "/health",
     publique: publique("CDN_URL", "https://cdn.rosegriffon.fr"),
-    unite: "rg-cdn.service",
-    role: "images servies et téléversées",
-  },
-  storage: {
-    nom: "storage",
-    titre: "Stockage",
-    base: local(8810, "STORAGE_URL"),
-    sante: "/health",
-    publique: `${publique("WEBSITE_URL", "https://rosegriffon.fr")}/storage/v1`,
-    unite: "rg-storage.service",
-    role: "fichiers des seaux publics et privés",
-  },
-  realtime: {
-    nom: "realtime",
-    titre: "Temps réel",
-    base: local(8812, "REALTIME_URL"),
-    sante: "/health",
-    publique: `${publique("WEBSITE_URL", "https://rosegriffon.fr")}/realtime/v1`,
-    unite: "rg-realtime.service",
-    role: "flux SSE adossé à LISTEN/NOTIFY",
+    unite: null,
+    role: "assets IEVR servis par nie-model-serve",
   },
   wiki: {
     nom: "wiki",

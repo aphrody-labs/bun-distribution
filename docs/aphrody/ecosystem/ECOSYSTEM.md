@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 198 crates, 36 binaries, 72 Bun packages, 10 uv packages, 777 CLI commands, 334 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 198 crates, 36 binaries, 69 Bun packages, 10 uv packages, 777 CLI commands, 334 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -286,7 +286,7 @@ Active game-domain workspace
 | `aphrody-wii-runtime` | crates/emu/wii/core | Retained Gecko Wii/GameCube interpreter and device runtime |  | default, fps-counter, gx-stats, hooks, hooks-mut-traps, rendersink-blackbox |
 | `aphrody-wii-web` | apps/web/wii/crate | Wii WebAssembly browser adapter. |  | debug, default |
 
-### Bun packages (34)
+### Bun packages (31)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -304,7 +304,6 @@ Active game-domain workspace
 | `@rosegriffon/azalee` | packages/azalee | Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI. | `azalee` |
 | `@rosegriffon/azalee-web` | packages/nie-ui/apps/azalee-web |  |  |
 | `@rosegriffon/bot` | apps/rg/bot | Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards |  |
-| `@rosegriffon/cdn` | packages/rg/cdn |  |  |
 | `@rosegriffon/config` | packages/rg/config | Configs partagées : TypeScript, Oxc et Tailwind preset |  |
 | `@rosegriffon/cron` | packages/rg/cron | Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API |  |
 | `@rosegriffon/db` | packages/rg/db | Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot) |  |
@@ -316,9 +315,7 @@ Active game-domain workspace
 | `@rosegriffon/menu-render` | packages/nie-ui/packages/menu-render | React menu renderer with a caller-supplied Lua runtime and game-host adapter. |  |
 | `@rosegriffon/menu-render-webgpu` | packages/nie-ui/packages/menu-render-webgpu | Renderer WebGPU 2D pixel-perfect pour les écrans de menu IEVR (quads texturés instanciés, projection ortho 1280×720, sampler nearest, premultiplied alpha, blend par drawType, z-order painter par drawPriority). Fallback DOM <GameMenu> de @rosegriffon/menu-render. |  |
 | `@rosegriffon/preferences` | packages/rg/preferences | Pure cross-runtime resolution of Rose Griffon presentation preferences |  |
-| `@rosegriffon/realtime` | packages/rg/realtime |  |  |
 | `@rosegriffon/search` | packages/rg/search | Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa |  |
-| `@rosegriffon/storage` | packages/rg/storage |  |  |
 | `@rosegriffon/types` | packages/rg/types | Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website |  |
 | `@rosegriffon/website` | apps/rg/website |  |  |
 | `iecode-homebrew` | packages/iecode-homebrew | Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains | `iecode-homebrew` |

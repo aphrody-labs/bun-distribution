@@ -17,9 +17,9 @@
     "rg": {
       "role": "canonical-platform",
       "website": { "runtime": "next-bun", "package": "@rosegriffon/website", "ui": "@rosegriffon/ui (site repository; removed from m3 on 2026-10-09)", "shell": "@rosegriffon/app-shell", "auth": "@rosegriffon/auth", "api": "@rosegriffon/achillea-client" },
-      "api": { "runtime": "bun-elysia", "database": "@rosegriffon/db", "auth": "@rosegriffon/auth", "contract": "@rosegriffon/types" },
+      "api": { "runtime": "vercel-function-bun-elysia", "database": "@rosegriffon/db", "auth": "@rosegriffon/auth", "contract": "@rosegriffon/types" },
       "bot": { "runtime": "bun-discord.js", "api": "rg-api", "database": "postgresql" },
-      "data": { "primary": "postgresql", "realtime": "rg-realtime", "storage": "rg-storage", "search": "@rosegriffon/search" }
+      "data": { "primary": "supabase-postgresql", "realtime": "supabase-realtime-broadcast", "storage": "supabase-storage", "search": "@rosegriffon/search" }
     },
     "shenron": {
       "role": "application-namespace-on-rg-plane",

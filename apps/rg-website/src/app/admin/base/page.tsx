@@ -186,7 +186,7 @@ export default async function InfrastructurePage() {
               <HardDrive className="size-5 text-muted-foreground" aria-hidden />
               Stockage
             </CardTitle>
-            <CardDescription>Fichiers servis par `rg-storage`, indexés dans `storage.objects`.</CardDescription>
+            <CardDescription>Fichiers servis par Supabase Storage, indexés dans `storage.objects`.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {buckets.length === 0 && <p className="text-sm text-muted-foreground">Aucun bucket.</p>}
