@@ -69,6 +69,25 @@ export class LobbyRoom extends Room<{ state: LobbyState }> {
     return true;
   }
 
+  /**
+   * Pousse un évènement (`match_found`, `rematch_offer`, `ranked_dispute_resolved`…) aux joueurs
+   * PRÉSENTS dans la lobby. Remplace l'ancien relais Socket.IO du bot TSed : le bot, Colyseus et
+   * l'API partagent désormais le processus `rg-core`, la livraison se fait donc en mémoire.
+   * Best-effort : un joueur absent de la lobby ne reçoit rien. Renvoie le nombre de joueurs notifiés.
+   */
+  static livrerEvenement(userIds: readonly string[], evenement: string, charge: unknown): number {
+    const room = LobbyRoom.current;
+    if (!room) return 0;
+    let livres = 0;
+    for (const userId of new Set(userIds)) {
+      const present = room.findByUserId(userId);
+      if (!present) continue;
+      present.client.send(evenement, charge);
+      livres++;
+    }
+    return livres;
+  }
+
   override onCreate(_options: any) {
     LobbyRoom.current = this;
     this.setState(new LobbyState());

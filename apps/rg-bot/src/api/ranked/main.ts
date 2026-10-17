@@ -16,7 +16,6 @@ import {
 import express from "express";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { createProxyMiddleware } from "http-proxy-middleware";
 
 import { QueueRoom } from "./rooms/QueueRoom";
 import { MatchRoom } from "./rooms/MatchRoom";
@@ -97,36 +96,28 @@ function isInternal(req: express.Request): boolean {
   return INTERNAL_SECRET.length > 0 && req.headers["x-internal-secret"] === INTERNAL_SECRET;
 }
 
-// Pousse un event Socket.IO à une liste de joueurs via le bot TSed (sub-process Colyseus →
-// bot :4000). Best-effort : sert à notifier une proposition de revanche (`rematch_offer`).
-function emitToUsersViaBot(userIds: string[], event: string, payload: unknown): void {
-  const apiPort = Number(process.env.API_PORT ?? 4000);
-  fetch(`http://127.0.0.1:${apiPort}/notifications/emit-to-users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(INTERNAL_SECRET ? { "x-internal-secret": INTERNAL_SECRET } : {}),
-    },
-    body: JSON.stringify({ userIds, event, payload }),
-  }).catch(err => {
-    console.error("[ranked] emit-to-users fetch failed", err);
-  });
+// Pousse un évènement aux joueurs présents dans la lobby Colyseus (même processus). Best-effort :
+// sert à notifier une proposition de revanche (`rematch_offer`) ou un litige tranché.
+function emitToUsers(userIds: string[], event: string, payload: unknown): void {
+  LobbyRoom.livrerEvenement(userIds, event, payload);
 }
 
-// Relaie une preuve de litige vers le bot TSed (→ salon des Tournament Organizers).
-// Best-effort : un échec n'empêche pas l'enregistrement de la preuve.
+/** Relais d'une preuve de litige vers Discord, posé par l'hôte qui tient la passerelle (`rg-core`). */
+export type RelaisPreuveRanked = (lobbyId: number, userId: string, url: string) => Promise<void>;
+let relaisPreuve: RelaisPreuveRanked | null = null;
+
+/** Branche le relais des preuves (salon des Tournament Organizers) ; `null` le retire. */
+export function definirRelaisPreuveRanked(relais: RelaisPreuveRanked | null): void {
+  relaisPreuve = relais;
+}
+
+// Relaie une preuve de litige vers Discord. Best-effort : un échec n'empêche pas son enregistrement.
 function notifyProofToBot(lobbyId: number, userId: string, url: string): void {
-  const apiPort = Number(process.env.API_PORT ?? 4000);
-  fetch(`http://127.0.0.1:${apiPort}/notifications/ranked-proof`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(INTERNAL_SECRET ? { "x-internal-secret": INTERNAL_SECRET } : {}),
-    },
-    body: JSON.stringify({ lobbyId, userId, url }),
-  }).catch(err => {
-    console.error("[ranked] ranked-proof fetch failed", err);
-  });
+  if (!relaisPreuve) {
+    console.warn(`[ranked] preuve du lobby ${lobbyId} enregistrée sans relais Discord (passerelle absente)`);
+    return;
+  }
+  relaisPreuve(lobbyId, userId, url).catch(err => console.error("[ranked] relais de preuve en échec", err));
 }
 
 // Notifie en TEMPS RÉEL les 2 joueurs d'un litige tranché par un admin (validation ou
@@ -165,7 +156,7 @@ async function notifyDisputeResolved(lobbyId: number, cancelled: boolean): Promi
       eloDelta: r.elo_variation ?? 0,
       eloAfter: r.elo,
     }));
-    emitToUsersViaBot(
+    emitToUsers(
       rows.map(r => r.user_id),
       "ranked_dispute_resolved",
       { lobbyId, mode, cancelled, players },
@@ -265,31 +256,86 @@ function corsMiddleware(req: express.Request, res: express.Response, next: expre
   next();
 }
 
-/** Compatibility transport: public ranked reads are owned by the unified API. */
-async function proxyUnifiedRankedRead(req: express.Request, res: express.Response, path: string) {
-  const target = new URL(
-    path.startsWith("/users/") ? `/v1/achillea${path}` : `/v1/achillea/ranked${path}`,
-    process.env.UNIFIED_API_URL ?? "http://127.0.0.1:8800",
-  );
-  const query = req.originalUrl.split("?", 2)[1];
-  if (query) target.search = query;
-  const headers: Record<string, string> = { accept: "application/json" };
-  if (req.headers.cookie) headers.cookie = req.headers.cookie;
-  if (typeof req.headers.authorization === "string") headers.authorization = req.headers.authorization;
-  try {
-    const upstream = await fetch(target, { headers });
-    const body = await upstream.text();
-    res.status(upstream.status).setHeader("Content-Type", "application/json");
-    if (upstream.headers.get("cache-control")) res.setHeader("Cache-Control", upstream.headers.get("cache-control")!);
-    return res.send(body);
-  } catch (error) {
-    console.error("[ranked] unified read proxy failed", error);
-    return res.status(503).json({ error: "unified_api_unavailable" });
+/** Appel de l'API unifiée (`/v1/*`) : en processus sous `rg-core`, HTTP sinon. */
+export type ApiUnifiee = (requete: Request) => Promise<Response>;
+
+const URL_API_UNIFIEE = (process.env.UNIFIED_API_URL ?? "https://api.rosegriffon.fr").replace(/\/$/, "");
+let apiUnifiee: ApiUnifiee = requete => fetch(requete);
+
+function appelerApiUnifiee(requete: Request): Promise<Response> {
+  return apiUnifiee(requete);
+}
+
+/** En-têtes de transport qui ne se relaient pas d'une réponse à l'autre. */
+const ENTETES_NON_RELAYES = new Set(["connection", "content-encoding", "content-length", "keep-alive", "transfer-encoding"]);
+
+/**
+ * Chemin unifié d'un ancien chemin `/api/*` du client Achilléa (`DEFAULT_ACHILLEA_API_URL`) :
+ * `/auth/token` est l'alias de `/v1/auth/realtime-token`, `/auth/*` vit sous `/v1/auth`, le reste
+ * sous `/v1/achillea`.
+ */
+export function cheminApiUnifiee(cheminApi: string): string {
+  if (cheminApi === "/auth/token") return "/v1/auth/realtime-token";
+  if (cheminApi === "/auth" || cheminApi.startsWith("/auth/")) return `/v1${cheminApi}`;
+  return `/v1/achillea${cheminApi}`;
+}
+
+/** Traduit une requête Express `/api/*` en requête Fetch vers l'API unifiée. */
+function versRequeteUnifiee(req: express.Request): Request {
+  const [chemin = "/", query] = req.originalUrl.replace(/^\/api(?=\/|$)/, "").split("?", 2);
+  const cible = new URL(cheminApiUnifiee(chemin || "/"), URL_API_UNIFIEE);
+  if (query) cible.search = query;
+  const headers = new Headers();
+  for (const [nom, valeur] of Object.entries(req.headers)) {
+    if (nom === "host" || nom === "content-length" || valeur === undefined) continue;
+    headers.set(nom, Array.isArray(valeur) ? valeur.join(", ") : valeur);
+  }
+  const sansCorps = req.method === "GET" || req.method === "HEAD";
+  let body: string | undefined;
+  if (!sansCorps && typeof req.body === "string") body = req.body;
+  else if (!sansCorps && req.body && typeof req.body === "object" && Object.keys(req.body).length > 0) {
+    body = JSON.stringify(req.body);
+    headers.set("content-type", "application/json");
+  }
+  return new Request(cible.href, { method: req.method, headers, body });
+}
+
+/**
+ * Transport Colyseus de `rg-core` : le serveur Bun.serve de Colyseus devient le SEUL port du
+ * processus. `BunWebSockets.listen` crée son serveur en interne ; on enveloppe son `fetch` le temps
+ * de l'appel pour servir d'abord les routes de l'hôte (santé, modèles, admin, cron), puis Colyseus.
+ */
+export type IntercepteurHttp = (
+  requete: Request,
+  serveur: Bun.Server<unknown>,
+) => Response | undefined | Promise<Response | undefined>;
+
+let intercepteur: IntercepteurHttp | null = null;
+
+class TransportRanked extends BunWebSockets {
+  override listen(port: number, hostname?: string, backlog?: number, listeningListener?: () => void) {
+    const intercepter = intercepteur;
+    if (!intercepter) return super.listen(port, hostname, backlog, listeningListener);
+    const serveOriginal = Bun.serve;
+    type FetchColyseus = (this: Bun.Server<unknown>, requete: Request, serveur: Bun.Server<unknown>) => unknown;
+    (Bun as { serve: unknown }).serve = (options: Bun.Serve.Options<unknown> & { fetch: FetchColyseus }) =>
+      serveOriginal({
+        ...options,
+        async fetch(requete: Request, serveur: Bun.Server<unknown>) {
+          const reponse = await intercepter(requete, serveur);
+          return reponse ?? ((await options.fetch.call(serveur, requete, serveur)) as Response);
+        },
+      } as Bun.Serve.Options<unknown>);
+    try {
+      return super.listen(port, hostname, backlog, listeningListener);
+    } finally {
+      (Bun as { serve: unknown }).serve = serveOriginal;
+    }
   }
 }
 
 const server = defineServer({
-  transport: new BunWebSockets({}),
+  transport: new TransportRanked({}),
   rooms: {
     // Partition par mode ET classé/non classé : un joueur classé ne sera jamais
     // apparié avec un joueur en file amicale (et inversement).
@@ -307,24 +353,6 @@ const server = defineServer({
     app.get("/api/health", (_req, res) => {
       res.json({ ok: true, ts: Date.now(), activeChallenges: activeChallengeCount() });
     });
-
-    // Public reads are compatibility routes; the unified API owns their SQL.
-    app.get("/api/ranked/tiers", (req, res) => proxyUnifiedRankedRead(req, res, "/tiers"));
-
-    // GET /api/users/me — user enrichi (role, clanId, etc.) pour le rewrite nginx
-    // Le frontend Angular appelle ça au lieu de /api/auth/me pour avoir
-    // le rôle (Administrator) qui débloque l'admin dashboard.
-    app.get("/api/users/me", (req, res) => proxyUnifiedRankedRead(req, res, "/users/me"));
-
-    // GET /api/ranked/me — profil ELO du user courant
-    app.get("/api/ranked/me", (req, res) => proxyUnifiedRankedRead(req, res, "/me"));
-
-    // GET /api/ranked/leaderboard?mode=&page=&pageSize= — classement LIVE de la saison
-    // active (DENSE_RANK par mode, tri Elo desc), enrichi displayName/avatar. Remplace
-    // l'ancienne lecture directe de la vue Supabase `leaderboard_view`, qui filtrait
-    // `season_id IS NULL` → vide depuis la création de « Saison 1 » (toutes les lignes
-    // user_elo portent désormais un season_id non-null). Source de vérité unique = cette DB.
-    app.get("/api/ranked/leaderboard", (req, res) => proxyUnifiedRankedRead(req, res, "/leaderboard"));
 
     // POST /api/ranked/challenge — crée un lien de défi partageable. Body : { mode, ranked,
     // toUserId? }. Si `toUserId` est fourni (revanche), une notification `rematch_offer` est
@@ -360,7 +388,7 @@ const server = defineServer({
         });
         // Revanche ciblée → notification temps réel au joueur visé.
         if (toUserId) {
-          emitToUsersViaBot([toUserId], "rematch_offer", {
+          emitToUsers([toUserId], "rematch_offer", {
             code: challenge.code,
             fromUserId: me.userId,
             fromDisplayName: me.displayName,
@@ -991,48 +1019,22 @@ const server = defineServer({
       }
     });
 
-    // FALLBACK PROXY : tout /api/* non géré par les handlers ci-dessus est
-    // proxifié vers le bot TSed local (port :4000) qui expose les controllers
-    // historiques (tournaments, clans, users/:id, notifications, etc.).
-    // MUST être ajouté APRÈS tous les routes ranked spécifiques.
-    const BOT_API_PORT = process.env.API_PORT ?? "4000";
-    // Le bot TSed monte ses controllers sur `/` (pas `/api`). Le proxy
-    // reçoit la requête sur `/api/...` (path déjà stripé du préfixe par
-    // app.use("/api", ...)), il faut donc juste forwarder tel quel —
-    // path-rewrite par défaut conserve le path après le mount prefix.
-    app.use(
-      "/api",
-      createProxyMiddleware<express.Request, express.Response>({
-        target: `http://127.0.0.1:${BOT_API_PORT}`,
-        changeOrigin: true,
-        on: {
-          // express.json() above consumes the incoming stream. Re-emit the
-          // parsed payload for the upstream; otherwise Bun's compatibility
-          // layer tries to read an object/string as a ReadableStream.
-          proxyReq: (proxyReq, req) => {
-            if (!req.body || typeof req.body !== "object") return;
-            const body = JSON.stringify(req.body);
-            proxyReq.setHeader("content-type", "application/json");
-            proxyReq.setHeader("content-length", Buffer.byteLength(body));
-            proxyReq.write(body);
-          },
-          error: (err, _req, res) => {
-            console.error("[ranked] bot proxy error:", err.message);
-            // `headersSent` n'est pas fiable sur la réponse Bun/express du proxy
-            // (il reste `false` alors que les en-têtes sont partis) : sans le
-            // try/catch, chaque erreur amont produisait un second log parasite
-            // « writeHead: headers were already sent. ».
-            if (!res || !("writeHead" in res) || res.headersSent || res.writableEnded) return;
-            try {
-              res.writeHead(502, { "content-type": "application/json" });
-              res.end(JSON.stringify({ error: "bot_unavailable" }));
-            } catch {
-              // réponse déjà engagée — rien à faire de plus
-            }
-          },
-        },
-      }),
-    );
+    // Tout /api/* non géré ci-dessus appartient à l'API unifiée (`/v1/*`) : en processus sous
+    // `rg-core` (`api` fourni à `demarrerRanked`), sinon par HTTP vers `UNIFIED_API_URL`.
+    // MUST être ajouté APRÈS toutes les routes ranked spécifiques.
+    app.use("/api", async (req, res) => {
+      try {
+        const reponse = await appelerApiUnifiee(versRequeteUnifiee(req));
+        res.status(reponse.status);
+        reponse.headers.forEach((valeur, nom) => {
+          if (!ENTETES_NON_RELAYES.has(nom)) res.setHeader(nom, valeur);
+        });
+        res.send(Buffer.from(await reponse.arrayBuffer()));
+      } catch (err) {
+        console.error("[ranked] API unifiée injoignable :", err);
+        if (!res.headersSent) res.status(502).json({ error: "api_unavailable" });
+      }
+    });
 
     // Error-handler TERMINAL (4 args) — DOIT être le dernier middleware. Sans lui, une
     // erreur de body-parser/raw-body (ex. POST /dispute avec une image trop lourde →
@@ -1063,17 +1065,39 @@ process.on("uncaughtException", err => {
   console.error("[ranked] uncaughtException", err);
 });
 
-await server.listen(PORT, HOST);
-console.info(`[ranked] Colyseus server listening on ${HOST}:${PORT} (origins=${ALLOWED_ORIGINS.join(",")})`);
+export interface OptionsRanked {
+  port?: number;
+  hostname?: string;
+  /** API unifiée en processus (`app.handle` d'Elysia) ; HTTP vers `UNIFIED_API_URL` sinon. */
+  api?: ApiUnifiee;
+  /** Routes servies avant Colyseus sur le même port (`rg-core`). */
+  intercepter?: IntercepteurHttp;
+}
 
-// Nettoyage périodique des lobbies abandonnés (Ongoing >24h jamais finalisés) — préserve Contested.
-const runLobbyCleanup = async () => {
-  try {
-    const n = await cleanupStaleOngoingLobbies(24);
-    if (n > 0) console.info(`[ranked] ${n} lobby(s) Ongoing abandonné(s) annulé(s)`);
-  } catch (err) {
-    console.error("[ranked] cleanup lobbies failed", err);
-  }
-};
-void runLobbyCleanup();
-setInterval(() => void runLobbyCleanup(), 4 * 60 * 60 * 1000);
+let demarre = false;
+
+/** Démarre Colyseus (rooms + REST ranked) et le nettoyage périodique des lobbies. Idempotent. */
+export async function demarrerRanked(options: OptionsRanked = {}): Promise<void> {
+  if (demarre) return;
+  demarre = true;
+  if (options.api) apiUnifiee = options.api;
+  intercepteur = options.intercepter ?? null;
+  const port = options.port ?? PORT;
+  const hostname = options.hostname ?? HOST;
+  await server.listen(port, hostname);
+  console.info(`[ranked] Colyseus server listening on ${hostname}:${port} (origins=${ALLOWED_ORIGINS.join(",")})`);
+
+  // Nettoyage périodique des lobbies abandonnés (Ongoing >24h jamais finalisés) — préserve Contested.
+  const runLobbyCleanup = async () => {
+    try {
+      const n = await cleanupStaleOngoingLobbies(24);
+      if (n > 0) console.info(`[ranked] ${n} lobby(s) Ongoing abandonné(s) annulé(s)`);
+    } catch (err) {
+      console.error("[ranked] cleanup lobbies failed", err);
+    }
+  };
+  void runLobbyCleanup();
+  setInterval(() => void runLobbyCleanup(), 4 * 60 * 60 * 1000);
+}
+
+if (import.meta.main) await demarrerRanked();

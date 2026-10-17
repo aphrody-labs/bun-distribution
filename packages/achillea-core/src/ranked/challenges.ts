@@ -2,11 +2,12 @@
 //
 // Un joueur génère un lien (`/ranked/defi/<code>`) ; n'importe quel autre joueur connecté
 // peut l'ouvrir et l'accepter → un match est créé entre les deux. Le défi peut aussi viser
-// un joueur précis (`toUserId`, ex. proposition de revanche poussée via Socket.IO).
+// un joueur précis (`toUserId`, ex. proposition de revanche poussée par la lobby Colyseus).
 //
-// Volontairement EN MÉMOIRE (pas de table) : un défi est éphémère (TTL court) et un
-// redémarrage du sub-process Colyseus l'invalide sans conséquence (le lien renverra
-// simplement « défi expiré », l'inviteur en régénère un). Zéro migration DB.
+// Volontairement EN MÉMOIRE (pas de table) : un défi est éphémère (TTL de 30 min) et vit dans
+// l'UNIQUE instance `rg-core` qui sert Colyseus. Un redémarrage du service l'invalide sans autre
+// conséquence (le lien renverra « défi expiré », l'inviteur en régénère un). Cette hypothèse tient
+// tant que le ranked n'a qu'une instance : en ajouter une seconde imposerait une table partagée.
 
 const CHALLENGE_TTL_MS = 30 * 60 * 1000; // 30 min
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sans I/O/0/1 (lisibilité)

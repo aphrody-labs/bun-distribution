@@ -34,7 +34,7 @@
 import { MessageFlags, type RepliableInteraction } from "discord.js";
 
 import { NotAdminError, requireRgAdmin, requireRgAdminStrict, type RgAdmin } from "../../lib/rbac";
-import { CronInjoignableError, cheminSocketCron } from "../../lib/cron-ipc";
+import { CronInjoignableError } from "../../lib/cron-ipc";
 import { ServiceIndisponibleError } from "../../lib/services";
 import { refus as accesRefuse, repondre } from "../../lib/ui";
 
@@ -88,10 +88,8 @@ export async function exigerDroits(
 export function messagePanne(err: unknown): string {
   if (err instanceof CronInjoignableError) {
     return (
-      `Le démon de tâches est injoignable (socket \`${cheminSocketCron()}\`, unité ` +
-      "`rg-cron.service`). Ce n'est pas la cible qui est en panne : c'est notre pont. " +
-      "La socket n'existe qu'après un redémarrage du démon avec le pont branché — " +
-      "`sudo systemctl restart rg-cron.service`."
+      `Le registre des tâches n'a pas répondu (${err.message}). Ce n'est pas la cible qui est en panne : ` +
+      "c'est `rg-core` — voir `journalctl -u rg-core`."
     );
   }
   if (err instanceof ServiceIndisponibleError) {

@@ -35,6 +35,7 @@ import {
 } from "@aphrody/discord-kit";
 
 import { MODULE_LOADERS } from "./modules";
+import { definirClientActif } from "./lib/client-actif";
 import { closeCache } from "./lib/cache";
 import {
   DISCORD_TOKEN,
@@ -106,6 +107,9 @@ if (!isApiMode && !DISCORD_TOKEN && !isBotMode) {
         }
       : {}),
   });
+
+  // Passerelle partagée avec les autres surfaces du processus (`rg-core` : veille, télémétrie).
+  definirClientActif(client);
 
   /**
    * Charge les modules du profil pour leurs décorateurs.

@@ -1,64 +1,25 @@
 /**
- * Pont natif bot → `rg-cron.service`, sur une SOCKET UNIX.
+ * Pont bot → tâches cron, EN PROCESSUS.
  *
- * ── POURQUOI PAS LES PORTS EXISTANTS ───────────────────────────────────────
- * Mesuré le 12/8/2026 : `:3005` (plan de contrôle du cron) et `:3006` (serveur
- * d'annonces) écoutent sur `*`, et `ufw` laisse passer `3000:3010/tcp` depuis
- * n'importe où. Pire, `DISCORD_ANNOUNCE_SECRET` est absent de l'environnement
- * des deux démons : le code retombe sur le littéral `"default-secret-key-12345"`
- * écrit dans `packages/cron/src/index.ts`, et une requête portant ce secret
- * depuis Internet passe l'authentification (réponse 400 sur la charge, pas 401).
- * Bâtir le pont sur ces ports, c'était bâtir sur une porte ouverte.
+ * Le démon `rg-cron.service` et sa socket UNIX ont disparu : les tâches serverless sont planifiées
+ * par `pg_cron` (`POST /v1/cron/<tâche>`), les tâches lourdes tournent dans `rg-core`, le même
+ * processus que ce bot. Les verbes historiques du pont (`health`, `tasks.list`, `metrics`,
+ * `task.status`, `task.run`, `telemetry.discord`, `scrape.*`, `x.*`) sont donc servis ici
+ * directement par le registre de `@rosegriffon/cron`, sans socket ni sérialisation. Le contrat
+ * des appelants (`appelerCron`, `abonnerCron`, `CronInjoignableError`) est inchangé.
  *
- * Une socket UNIX n'a pas de port, pas de secret à faire tourner, et ses
- * permissions sont appliquées par le noyau. Les deux démons tournent en
- * `ubuntu` ; `/var/lib/rg` appartient à `ubuntu` et figure déjà dans les
- * `ReadWritePaths` de `rg-cron.service`.
- *
- * ⚠ Le bot ne peut PAS créer cette socket (`ProtectSystem=strict` rend `/var`
- * en lecture seule pour lui) — mais il n'en a pas besoin : s'y CONNECTER
- * fonctionne, car le noyau n'oppose `EROFS` qu'aux fichiers réguliers, aux
- * dossiers et aux liens, jamais aux sockets. Vérifié sous le bac à sable exact
- * du service.
- *
- * ── DEUX SENS SUR UNE SEULE SOCKET ─────────────────────────────────────────
- * Les commandes bot → cron ouvrent une connexion courte (une requête, une
- * réponse, fermeture). Les poussées cron → bot (`tweets.signal`, `task.done`)
- * passent par une connexion PERSISTANTE que le bot ouvre avec `subscribe` : le
- * cron n'a donc jamais à se connecter au bot, et il n'existe pas de seconde
- * socket à créer dans un dossier que le bot pourrait écrire.
- *
- * Fonctions exportées, pas de classe : le piège `tsyringe` + `import type`
- * (qui casse `Reflect.metadata("design:paramtypes")`) ne s'applique donc pas ici.
+ * `@rosegriffon/cron` est chargé à la demande : une commande qui n'appelle jamais le pont ne
+ * charge ni le registre ni sa connexion Postgres.
  */
-import type { Socket } from "bun";
+import { clientActif } from "./client-actif";
 
-/** Chemin de la socket quand `RG_CRON_SOCKET` n'est pas posé — celui du service. */
-export const CHEMIN_SOCKET_CRON_DEFAUT = "/var/lib/rg/cron.sock";
-
-/**
- * Chemin de la socket. Doit rester identique côté cron (`lib/ipc-unix.ts`).
- *
- * Résolu à CHAQUE APPEL, et non figé à l'import. La différence n'est pas
- * théorique : `bun test` exécute tous les fichiers de tests dans un SEUL
- * processus, donc le premier module qui chargeait celui-ci gelait le chemin
- * pour tous les autres. Un test qui pose `RG_CRON_SOCKET` vers une socket
- * temporaire avant d'importer voyait alors `/var/lib/rg/cron.sock` — le chemin
- * de production — parce qu'un test précédent (une commande `/staff`, par
- * exemple) avait déjà déclenché l'import. Le coût d'une lecture d'environnement
- * par connexion est nul devant celui d'un test qui ment.
- */
-export function cheminSocketCron(): string {
-  return Bun.env.RG_CRON_SOCKET ?? CHEMIN_SOCKET_CRON_DEFAUT;
-}
-
-/** Requête JSON, une par ligne. `cmd` est le verbe. */
+/** Requête : `cmd` est le verbe. */
 export interface RequeteIpc {
   cmd: string;
   [clef: string]: unknown;
 }
 
-/** Réponse du cron. `success` est toujours présent. */
+/** Réponse. `success` est toujours présent. */
 export interface ReponseIpc {
   success: boolean;
   error?: string;
@@ -66,7 +27,7 @@ export interface ReponseIpc {
   [clef: string]: unknown;
 }
 
-/** Poussée spontanée du cron vers le bot abonné. */
+/** Poussée spontanée vers les abonnés (`task.done`, `tweets.signal`). */
 export interface EvenementIpc {
   event: string;
   [clef: string]: unknown;
@@ -80,199 +41,190 @@ export class CronInjoignableError extends Error {
 }
 
 const DELAI_DEFAUT_MS = 10_000;
+const demarreLe = new Date().toISOString();
+const enCours = new Set<string>();
+const abonnes = new Set<(evenement: EvenementIpc) => void>();
+const compteurs = { tasksTriggered: 0, tasksSucceeded: 0, tasksFailed: 0 };
+
+function diffuser(evenement: EvenementIpc): void {
+  for (const abonne of abonnes) {
+    try {
+      abonne(evenement);
+    } catch (err) {
+      console.warn("[cron-ipc] abonné en erreur :", err);
+    }
+  }
+}
+
+/** Dernière exécution de chaque tâche, relue dans `public.cron_executions`. */
+async function dernieresExecutions(): Promise<
+  Record<string, { time: string; durationMs: number; success: boolean; error?: string }>
+> {
+  const { historiqueExecutions } = await import("@rosegriffon/cron");
+  const dernieres: Record<string, { time: string; durationMs: number; success: boolean; error?: string }> = {};
+  for (const ligne of await historiqueExecutions(200)) {
+    if (dernieres[ligne.tache]) continue;
+    dernieres[ligne.tache] = {
+      time: new Date(ligne.demarre_le).toISOString(),
+      durationMs: ligne.duree_ms,
+      success: ligne.succes,
+      ...(ligne.erreur ? { error: ligne.erreur } : {}),
+    };
+  }
+  return dernieres;
+}
+
+/** Télémétrie de la passerelle de ce processus, ou `null` si aucune n'est ouverte. */
+function telemetrieDiscord(): Record<string, unknown> | null {
+  const client = clientActif();
+  if (!client?.isReady()) return null;
+  return {
+    utilisateur: client.user.tag,
+    pingMs: client.ws.ping,
+    serveurs: client.guilds.cache.map(g => ({
+      id: g.id,
+      nom: g.name,
+      membres: g.memberCount,
+    })),
+    pretDepuis: client.readyAt?.toISOString() ?? null,
+  };
+}
+
+/** Lance une tâche en tâche de fond ; le verdict arrive par `task.done`. */
+async function lancer(requete: RequeteIpc): Promise<ReponseIpc> {
+  const { resoudreNomTache, lancerTache } = await import("@rosegriffon/cron");
+  const nom = resoudreNomTache(typeof requete.nom === "string" ? requete.nom : "");
+  if (!nom)
+    return {
+      success: false,
+      error: `Tâche « ${String(requete.nom)} » inconnue.`,
+      code: "inconnue",
+    };
+  if (enCours.has(nom))
+    return {
+      success: false,
+      error: `La tâche « ${nom} » tourne déjà.`,
+      code: "en_cours",
+    };
+  enCours.add(nom);
+  compteurs.tasksTriggered++;
+  const debut = Date.now();
+  void lancerTache(nom, { origine: "manuel" })
+    .then(resultat => {
+      if (resultat.success) compteurs.tasksSucceeded++;
+      else compteurs.tasksFailed++;
+      diffuser({
+        event: "task.done",
+        nom,
+        success: resultat.success,
+        error: resultat.error,
+        durationMs: Date.now() - debut,
+      });
+      if (resultat.success && nom.startsWith("x")) diffuser({ event: "tweets.signal", nom });
+    })
+    .catch(err => {
+      compteurs.tasksFailed++;
+      diffuser({
+        event: "task.done",
+        nom,
+        success: false,
+        error: String(err),
+        durationMs: Date.now() - debut,
+      });
+    })
+    .finally(() => enCours.delete(nom));
+  return { success: true, nom };
+}
+
+async function repondre(requete: RequeteIpc): Promise<ReponseIpc> {
+  switch (requete.cmd) {
+    case "health":
+      return { success: true, uptime: process.uptime(), abonnes: abonnes.size };
+    case "tasks.list":
+    case "tasks.schedules": {
+      const { TACHES_CRON, PLANIFICATIONS } = await import("@rosegriffon/cron");
+      return {
+        success: true,
+        taches: [...TACHES_CRON],
+        schedules: { ...PLANIFICATIONS },
+      };
+    }
+    case "metrics":
+      return {
+        success: true,
+        metrics: {
+          startedAt: demarreLe,
+          ...compteurs,
+          lastExecution: await dernieresExecutions(),
+        },
+      };
+    case "task.status": {
+      const nom = typeof requete.nom === "string" ? requete.nom : "";
+      return {
+        success: true,
+        nom,
+        derniere: (await dernieresExecutions())[nom] ?? null,
+        enCours: enCours.has(nom),
+      };
+    }
+    case "task.run":
+      return await lancer(requete);
+    case "telemetry.discord": {
+      const telemetry = telemetrieDiscord();
+      return telemetry
+        ? { success: true, telemetry }
+        : {
+            success: false,
+            error: "Télémétrie Discord indisponible.",
+            code: "indisponible",
+          };
+    }
+    default: {
+      const { servirVerbeScrape } = await import("@rosegriffon/cron");
+      return (await servirVerbeScrape(requete.cmd, requete)) as ReponseIpc;
+    }
+  }
+}
 
 /**
- * Envoie un verbe au cron et attend UNE réponse.
- *
- * Connexion courte volontaire : une commande Discord ne doit pas dépendre de la
- * santé d'une connexion ouverte depuis des heures. Le coût d'un `connect()` sur
- * une socket UNIX est négligeable devant le tour de réseau Discord.
+ * Sert un verbe du pont. Lève `CronInjoignableError` si le registre ne peut pas être chargé ou si
+ * le verbe dépasse son délai : les commandes distinguent ainsi « refusé » de « absent ».
  */
 export async function appelerCron<T extends ReponseIpc = ReponseIpc>(
   requete: RequeteIpc,
   options: { timeoutMs?: number } = {},
 ): Promise<T> {
   const delai = options.timeoutMs ?? DELAI_DEFAUT_MS;
-
-  return await new Promise<T>((resoudre, rejeter) => {
-    let tampon = "";
-    let termine = false;
-    let socket: Socket<undefined> | null = null;
-
-    const minuteur = setTimeout(() => {
-      finir(() => rejeter(new CronInjoignableError(`Aucune réponse du cron en ${delai} ms.`)));
-    }, delai);
-
-    function finir(action: () => void): void {
-      if (termine) {
-        return;
-      }
-      termine = true;
-      clearTimeout(minuteur);
-      try {
-        socket?.end();
-      } catch {
-        /* socket déjà fermée */
-      }
-      action();
-    }
-
-    Bun.connect<undefined>({
-      unix: cheminSocketCron(),
-      socket: {
-        open(ouverte) {
-          socket = ouverte;
-          ouverte.write(`${JSON.stringify(requete)}\n`);
-        },
-        data(_ouverte, donnees) {
-          tampon += donnees.toString();
-          const coupure = tampon.indexOf("\n");
-          if (coupure < 0) {
-            return;
-          }
-          const ligne = tampon.slice(0, coupure);
-          try {
-            finir(() => resoudre(JSON.parse(ligne) as T));
-          } catch (err) {
-            finir(() =>
-              rejeter(
-                new CronInjoignableError(
-                  `Réponse illisible du cron : ${err instanceof Error ? err.message : String(err)}`,
-                ),
-              ),
-            );
-          }
-        },
-        error(_ouverte, err) {
-          finir(() => rejeter(new CronInjoignableError(err.message)));
-        },
-        close() {
-          finir(() => rejeter(new CronInjoignableError("Le cron a fermé la connexion sans répondre.")));
-        },
-      },
-    }).catch((err: unknown) => {
-      finir(() =>
-        rejeter(
-          new CronInjoignableError(
-            `Socket ${cheminSocketCron()} injoignable — rg-cron.service n'expose le pont qu'après un redémarrage (${
-              err instanceof Error ? err.message : String(err)
-            }).`,
-          ),
-        ),
-      );
-    });
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  const expiration = new Promise<never>((_, rejeter) => {
+    minuteur = setTimeout(() => rejeter(new CronInjoignableError(`Aucune réponse en ${delai} ms.`)), delai);
   });
+  try {
+    return (await Promise.race([repondre(requete), expiration])) as T;
+  } catch (err) {
+    if (err instanceof CronInjoignableError) throw err;
+    throw new CronInjoignableError(err instanceof Error ? err.message : String(err));
+  } finally {
+    clearTimeout(minuteur);
+  }
 }
 
-/** Vrai si le pont répond. Sert aux commandes pour distinguer « refusé » de « absent ». */
+/** Vrai si le registre répond. */
 export async function cronDisponible(): Promise<boolean> {
   try {
-    const reponse = await appelerCron({ cmd: "health" }, { timeoutMs: 2_000 });
-    return reponse.success === true;
+    return (await appelerCron({ cmd: "health" }, { timeoutMs: 2_000 })).success === true;
   } catch {
     return false;
   }
 }
 
-// ─── Abonnement aux poussées du cron ────────────────────────────────────────
+/** Pousse un évènement aux abonnés (planificateur de `rg-core` : `tweets.signal`, `task.done`). */
+export function signalerCron(evenement: EvenementIpc): void {
+  diffuser(evenement);
+}
 
-let socketAbonnement: Socket<undefined> | null = null;
-let abonnementActif = false;
-let tentatives = 0;
-let minuteurReconnexion: ReturnType<typeof setTimeout> | null = null;
-
-/**
- * Ouvre (et maintient) la connexion d'abonnement.
- *
- * L'abonnement est une OPTIMISATION, jamais la source de vérité : si la socket
- * n'existe pas encore — c'est le cas tant que `rg-cron.service` n'a pas été
- * redémarré avec le pont — le bot se contente de réessayer, et son filet de
- * rattrapage périodique fait tout le travail. C'est le même motif que la veille
- * des messages Discord côté cron : passerelle pour la réactivité, rattrapage
- * régulier pour la garantie.
- *
- * @returns une fonction qui coupe l'abonnement.
- */
+/** S'abonne aux poussées (`task.done`, `tweets.signal`). Renvoie la fonction de désabonnement. */
 export function abonnerCron(surEvenement: (evenement: EvenementIpc) => void): () => void {
-  abonnementActif = true;
-  tentatives = 0;
-  connecter();
-
-  function planifierReconnexion(): void {
-    if (!abonnementActif || minuteurReconnexion) {
-      return;
-    }
-    // 2 s, 4 s, 8 s… plafonné à 2 min : une socket absente ne doit pas faire
-    // tourner le processus en boucle serrée pendant des heures.
-    const attente = Math.min(120_000, 2_000 * 2 ** Math.min(tentatives, 6));
-    tentatives += 1;
-    minuteurReconnexion = setTimeout(() => {
-      minuteurReconnexion = null;
-      connecter();
-    }, attente);
-  }
-
-  function connecter(): void {
-    if (!abonnementActif) {
-      return;
-    }
-    let tampon = "";
-    Bun.connect<undefined>({
-      unix: cheminSocketCron(),
-      socket: {
-        open(ouverte) {
-          socketAbonnement = ouverte;
-          tentatives = 0;
-          ouverte.write(`${JSON.stringify({ cmd: "subscribe" })}\n`);
-          console.info("[cron-ipc] abonné au pont", cheminSocketCron());
-        },
-        data(_ouverte, donnees) {
-          tampon += donnees.toString();
-          let coupure = tampon.indexOf("\n");
-          while (coupure >= 0) {
-            const ligne = tampon.slice(0, coupure).trim();
-            tampon = tampon.slice(coupure + 1);
-            coupure = tampon.indexOf("\n");
-            if (ligne.length === 0) {
-              continue;
-            }
-            try {
-              const charge = JSON.parse(ligne) as Partial<EvenementIpc>;
-              if (typeof charge.event === "string") {
-                surEvenement(charge as EvenementIpc);
-              }
-            } catch (err) {
-              console.warn("[cron-ipc] ligne illisible :", err);
-            }
-          }
-        },
-        error(_ouverte, err) {
-          console.warn("[cron-ipc] abonnement en erreur :", err.message);
-        },
-        close() {
-          socketAbonnement = null;
-          planifierReconnexion();
-        },
-      },
-    }).catch(() => {
-      // Silencieux : tant que le cron n'a pas redémarré avec le pont, la
-      // socket n'existe pas. En journaliser l'absence toutes les 2 s
-      // noierait le journal sans rien apprendre.
-      planifierReconnexion();
-    });
-  }
-
-  return () => {
-    abonnementActif = false;
-    if (minuteurReconnexion) {
-      clearTimeout(minuteurReconnexion);
-      minuteurReconnexion = null;
-    }
-    try {
-      socketAbonnement?.end();
-    } catch {
-      /* socket déjà fermée */
-    }
-    socketAbonnement = null;
-  };
+  abonnes.add(surEvenement);
+  return () => abonnes.delete(surEvenement);
 }
