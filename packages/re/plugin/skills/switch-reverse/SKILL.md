@@ -10,6 +10,7 @@ A toolbox for extracting and reverse-engineering Switch binaries (.NSP) so you c
 ## Critical lesson: ALWAYS verify the base address before computing offsets
 
 ARM PLT analysis has 3 separate off-by-N traps:
+
 - ARM `add ip, pc, #N` reads PC as `current_pc + 8` (pipeline)
 - PLT[0] may be 4 bytes (single LDR) OR 20 bytes (standard stub) depending on toolchain
 - NSO load base is NOT 0x200000 by default — it's determined at runtime and must be measured
@@ -18,14 +19,14 @@ ARM PLT analysis has 3 separate off-by-N traps:
 
 ## Tools provided in `scripts/`
 
-| Script | Purpose |
-|---|---|
-| `extract_nsp.sh <nsp_path> <out_dir>` | Run hactool to extract NSP → NCAs → ExeFS (main + sdk + subsdk*) |
-| `nso_parse.py <nso_path>` | Print NSO header, sections, dynsym/dynstr/JMPREL info |
-| `find_base.py <nso_path> <runtime_addr> <runtime_bytes_hex>` | Verify NSO load base by byte-pattern search |
-| `find_symbol.py <nso_path> --pc <runtime_addr> --base <base>` | Given a runtime PC of a PLT call, find the resolved symbol name |
-| `lookup_imports.py <nso_path> [filter]` | List imported functions (optional regex filter, e.g. "audio") |
-| `disasm.py <bytes_hex> <vma>` | Capstone-disassemble bytes at VMA |
+| Script                                                        | Purpose                                                          |
+| ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `extract_nsp.sh <nsp_path> <out_dir>`                         | Run hactool to extract NSP → NCAs → ExeFS (main + sdk + subsdk*) |
+| `nso_parse.py <nso_path>`                                     | Print NSO header, sections, dynsym/dynstr/JMPREL info            |
+| `find_base.py <nso_path> <runtime_addr> <runtime_bytes_hex>`  | Verify NSO load base by byte-pattern search                      |
+| `find_symbol.py <nso_path> --pc <runtime_addr> --base <base>` | Given a runtime PC of a PLT call, find the resolved symbol name  |
+| `lookup_imports.py <nso_path> [filter]`                       | List imported functions (optional regex filter, e.g. "audio")    |
+| `disasm.py <bytes_hex> <vma>`                                 | Capstone-disassemble bytes at VMA                                |
 
 ## Registry (`bases.json`)
 
@@ -35,9 +36,9 @@ Per-project file recording each NSO's measured load base. Keep this file in the 
 {
   "MK8D 0100152000022000 v0": {
     "_notes": "Mario Kart 8 Deluxe — base addresses verified by byte-pattern match",
-    "main":     "0x00206000",
+    "main": "0x00206000",
     "_subsdk0": "TBD",
-    "_sdk":     "TBD"
+    "_sdk": "TBD"
   }
 }
 ```

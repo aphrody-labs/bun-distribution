@@ -37,7 +37,7 @@ You operate primarily through the **live MCP server**:
 3. `xrefs(function=..., include_calls=true)` — see callers (how is this used?) and callees (what does it call?).
 4. **Rename the function first** (with a working hypothesis name; refine later).
 5. **Identify well-known calls** in the body (`malloc`, `memcpy`, `SendMessageW`, etc.) — that anchors the meaning.
-6. **Sweep locals** — for each `iVar`/`puVar`/`uVar`, rename based on what it's *used* for (not what it's assigned).
+6. **Sweep locals** — for each `iVar`/`puVar`/`uVar`, rename based on what it's _used_ for (not what it's assigned).
 7. If a struct emerges from offset access patterns, define it, apply it, then re-decompile to verify.
 8. `get_code` again — read the cleaned-up output to verify it makes sense. Iterate.
 

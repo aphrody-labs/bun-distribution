@@ -60,6 +60,7 @@ Bundled commands
 ```
 
 If anything is degraded, mark it with ✗ and a one-line hint. Examples:
+
 - MCP server unreachable → "Open Ghidra and enable GhidrAssistMCP via Window menu."
 - Java < 21 → "Install JDK 21+ — Ghidra 12 won't launch otherwise."
 - Ghidra tools missing in Codex — "Install or update this plugin, then start a new Codex task."

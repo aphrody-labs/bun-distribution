@@ -8,29 +8,29 @@ once `$env:GHIDRA_INSTALL_DIR` is set and a fresh shell has been opened.
 
 ### Native binaries (PATH-resolved)
 
-| Tool | Version | Path | Use |
-|---|---|---|---|
-| **Ghidra** | 12.0.4 | `$env:GHIDRA_INSTALL_DIR` | full RE platform — load, analyze, decompile, patch |
-| **NTRGhidra** | v1.5.1 | `…\Ghidra\Extensions\NTRGhidra\` | Ghidra loader for `.nds` (auto memory map + 40+ register labels + NitroSDK 3.0 FidB) |
-| **radare2** suite | 6.1.4 | `C:\Tools\radare2\radare2-6.1.4-w64\bin\` | CLI disassembler / debugger / patcher / hash / diff |
-| **QEMU** | 11.0.0 | `C:\Program Files\qemu\` | full-system + user-mode emulators for ARM, AArch64, and 30+ archs |
-| **Arm GNU Toolchain** | 14.2.Rel1 (gcc 14.2.1) | `C:\Tools\arm-gnu-toolchain\bin\` | bare-metal cross-compile, link, debug (`arm-none-eabi-*`) |
-| **3DS tools** | various | `…\Azahar\ie3\3ds-tools\bin\` | `3dstool`, `ctrtool`, `makerom`, `picasso` for CCI/CIA/CXI/exefs/romfs |
+| Tool                  | Version                | Path                                      | Use                                                                                  |
+| --------------------- | ---------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Ghidra**            | 12.0.4                 | `$env:GHIDRA_INSTALL_DIR`                 | full RE platform — load, analyze, decompile, patch                                   |
+| **NTRGhidra**         | v1.5.1                 | `…\Ghidra\Extensions\NTRGhidra\`          | Ghidra loader for `.nds` (auto memory map + 40+ register labels + NitroSDK 3.0 FidB) |
+| **radare2** suite     | 6.1.4                  | `C:\Tools\radare2\radare2-6.1.4-w64\bin\` | CLI disassembler / debugger / patcher / hash / diff                                  |
+| **QEMU**              | 11.0.0                 | `C:\Program Files\qemu\`                  | full-system + user-mode emulators for ARM, AArch64, and 30+ archs                    |
+| **Arm GNU Toolchain** | 14.2.Rel1 (gcc 14.2.1) | `C:\Tools\arm-gnu-toolchain\bin\`         | bare-metal cross-compile, link, debug (`arm-none-eabi-*`)                            |
+| **3DS tools**         | various                | `…\Azahar\ie3\3ds-tools\bin\`             | `3dstool`, `ctrtool`, `makerom`, `picasso` for CCI/CIA/CXI/exefs/romfs               |
 
 ### Python libraries (Python 3.14, user site-packages)
 
-| Library | Version | Use |
-|---|---|---|
-| `capstone` | 5.0.6 | multi-arch disassembler bindings — every ARM mode |
-| `keystone-engine` | 0.9.2 | multi-arch assembler — emit bytes from asm strings |
-| `unicorn` | 2.1.4 | CPU-only emulator — single-step ARM/Thumb, no devices |
-| `lief` | 0.17.6 | parse/modify ELF / PE / Mach-O / OAT / DEX |
-| `angr` | 9.2.214 | symbolic execution + VEX IR + static analysis |
-| `pwntools` | 4.15.0 | exploit-dev framework — ROP, shellcraft, packing |
-| `ndspy` | 4.2.0 | pure-Python NDS file formats (NARC / NCGR / NSBMD / SDAT / …) |
-| `pyctr` | 0.7.6 | pure-Python 3DS formats (CCI / CIA / CXI / ExeFS / RomFS) |
-| `ninfs` | 2.0 | FUSE-mount 3DS filesystems (needs WinFsp on Windows) |
-| `pyghidra` | 3.0.2 | CPython → Ghidra bridge (jpype-based) |
+| Library           | Version | Use                                                           |
+| ----------------- | ------- | ------------------------------------------------------------- |
+| `capstone`        | 5.0.6   | multi-arch disassembler bindings — every ARM mode             |
+| `keystone-engine` | 0.9.2   | multi-arch assembler — emit bytes from asm strings            |
+| `unicorn`         | 2.1.4   | CPU-only emulator — single-step ARM/Thumb, no devices         |
+| `lief`            | 0.17.6  | parse/modify ELF / PE / Mach-O / OAT / DEX                    |
+| `angr`            | 9.2.214 | symbolic execution + VEX IR + static analysis                 |
+| `pwntools`        | 4.15.0  | exploit-dev framework — ROP, shellcraft, packing              |
+| `ndspy`           | 4.2.0   | pure-Python NDS file formats (NARC / NCGR / NSBMD / SDAT / …) |
+| `pyctr`           | 0.7.6   | pure-Python 3DS formats (CCI / CIA / CXI / ExeFS / RomFS)     |
+| `ninfs`           | 2.0     | FUSE-mount 3DS filesystems (needs WinFsp on Windows)          |
+| `pyghidra`        | 3.0.2   | CPython → Ghidra bridge (jpype-based)                         |
 
 ### Console-specific extras
 
@@ -49,26 +49,26 @@ once `$env:GHIDRA_INSTALL_DIR` is set and a fresh shell has been opened.
 
 ## ARM architecture cheatsheet
 
-| Profile | Microarchitecture | Used in (examples on this box) |
-|---|---|---|
-| ARMv4T | ARM7TDMI | NDS ARM7, GBA |
-| ARMv5TE | ARM946E-S | NDS ARM9 |
-| ARMv6-M | Cortex-M0 / M0+ | low-power MCUs |
-| ARMv7-M | Cortex-M3 / M4 / M7 | STM32, NXP MCUs |
-| ARMv7-A | Cortex-A8 / A9 / A15 | **3DS (ARM11 MPCore)**, smartphones pre-2014 |
-| ARMv8-A AArch32 / AArch64 | Cortex-A53 / A72 / A78 | Switch, modern phones, Raspberry Pi 4 |
+| Profile                   | Microarchitecture      | Used in (examples on this box)               |
+| ------------------------- | ---------------------- | -------------------------------------------- |
+| ARMv4T                    | ARM7TDMI               | NDS ARM7, GBA                                |
+| ARMv5TE                   | ARM946E-S              | NDS ARM9                                     |
+| ARMv6-M                   | Cortex-M0 / M0+        | low-power MCUs                               |
+| ARMv7-M                   | Cortex-M3 / M4 / M7    | STM32, NXP MCUs                              |
+| ARMv7-A                   | Cortex-A8 / A9 / A15   | **3DS (ARM11 MPCore)**, smartphones pre-2014 |
+| ARMv8-A AArch32 / AArch64 | Cortex-A53 / A72 / A78 | Switch, modern phones, Raspberry Pi 4        |
 
 Ghidra's processor IDs to use with `-Processor`:
 
-| Target | Ghidra processor ID |
-|---|---|
-| NDS ARM9 (ARMv5TE) | `ARM:LE:32:v5t` |
-| NDS ARM7 (ARMv4T) | `ARM:LE:32:v4t` |
-| 3DS ARM11 (ARMv6) | `ARM:LE:32:v6` |
-| Cortex-M | `ARM:LE:32:Cortex` |
-| Generic ARMv7-A | `ARM:LE:32:v7` |
-| AArch64 | `AARCH64:LE:64:v8A` |
-| Big-endian variants | swap `LE` → `BE` |
+| Target              | Ghidra processor ID |
+| ------------------- | ------------------- |
+| NDS ARM9 (ARMv5TE)  | `ARM:LE:32:v5t`     |
+| NDS ARM7 (ARMv4T)   | `ARM:LE:32:v4t`     |
+| 3DS ARM11 (ARMv6)   | `ARM:LE:32:v6`      |
+| Cortex-M            | `ARM:LE:32:Cortex`  |
+| Generic ARMv7-A     | `ARM:LE:32:v7`      |
+| AArch64             | `AARCH64:LE:64:v8A` |
+| Big-endian variants | swap `LE` → `BE`    |
 
 Full list (181 entries on this Ghidra): `Get-GhidraProcessor | Select Id, Description`.
 
@@ -237,6 +237,7 @@ get auto-applied register labels (`REG_KEYINPUT`, `VRAMCNT_A` … `VRAMCNT_I`,
 ### Attach NitroSDK 3.0 Function ID DB
 
 After import, in Ghidra:
+
 ```
 Tools → Function ID → Attach existing FidDb…
   → $env:GHIDRA_INSTALL_DIR\Ghidra\Extensions\NTRGhidra\fidb\nitrosdk3.0.fidb
@@ -297,19 +298,19 @@ File → Import File → .code
 
 ## When to use which tool
 
-| Question | Tool |
-|---|---|
-| "What format is this binary?" | `rabin2 -I` or `lief` from Python |
-| "Decompile to C" | Ghidra (best decompiler for ARM) |
-| "Disassemble a region quickly" | `radare2` `pdf` or `capstone` from Python |
-| "Run this without a real device" | QEMU (system or user mode) |
-| "Find an input that triggers branch X" | `angr` symbolic exec |
-| "Does this assemble?" | `keystone-engine` (Python) or `arm-none-eabi-as` |
-| "Build a shellcode for ARM" | `arm-none-eabi-as` + `objcopy --output-target=binary` |
-| "Patch an ELF / PE / Mach-O programmatically" | `lief` |
-| "What's at offset X in this NDS ROM?" | `ndspy` |
-| "Mount a 3DS CIA as files" | `ninfs` |
-| "Drive my live Ghidra session from chat" | `ghidra` MCP server (`mcp__ghidra__*` tools) |
+| Question                                      | Tool                                                  |
+| --------------------------------------------- | ----------------------------------------------------- |
+| "What format is this binary?"                 | `rabin2 -I` or `lief` from Python                     |
+| "Decompile to C"                              | Ghidra (best decompiler for ARM)                      |
+| "Disassemble a region quickly"                | `radare2` `pdf` or `capstone` from Python             |
+| "Run this without a real device"              | QEMU (system or user mode)                            |
+| "Find an input that triggers branch X"        | `angr` symbolic exec                                  |
+| "Does this assemble?"                         | `keystone-engine` (Python) or `arm-none-eabi-as`      |
+| "Build a shellcode for ARM"                   | `arm-none-eabi-as` + `objcopy --output-target=binary` |
+| "Patch an ELF / PE / Mach-O programmatically" | `lief`                                                |
+| "What's at offset X in this NDS ROM?"         | `ndspy`                                               |
+| "Mount a 3DS CIA as files"                    | `ninfs`                                               |
+| "Drive my live Ghidra session from chat"      | `ghidra` MCP server (`mcp__ghidra__*` tools)          |
 
 ## Reference docs
 

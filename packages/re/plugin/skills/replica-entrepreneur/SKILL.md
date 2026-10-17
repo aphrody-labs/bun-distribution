@@ -45,15 +45,15 @@ python3 reviews.py replica/reviews.csv --out replica/feedback.md
 
 Aim for 100+ reviews across at least three sources, recent first:
 
-| source | where |
-| --- | --- |
-| App Store | the app page, Ratings and Reviews, See All; or the RSS feed above |
-| Google Play | the listing, See all reviews, sort by newest |
-| G2, Capterra, Trustpilot | the product's review pages, filter to 1 to 3 stars too |
-| Reddit | search "X alternative", "switched from X", "X sucks", "X vs" |
-| Hacker News | the Algolia API or site search, same queries |
+| source                   | where                                                                               |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| App Store                | the app page, Ratings and Reviews, See All; or the RSS feed above                   |
+| Google Play              | the listing, See all reviews, sort by newest                                        |
+| G2, Capterra, Trustpilot | the product's review pages, filter to 1 to 3 stars too                              |
+| Reddit                   | search "X alternative", "switched from X", "X sucks", "X vs"                        |
+| Hacker News              | the Algolia API or site search, same queries                                        |
 | the original's own board | its public roadmap or feature-request board (Canny and similar) and the vote counts |
-| its changelog | what it shipped, so you do not "fix" what is already fixed |
+| its changelog            | what it shipped, so you do not "fix" what is already fixed                          |
 
 Each row in `replica/reviews.csv`: `source,url,date,rating,text`, text copied
 exactly. Read the 3 and 4 star reviews too. "Love it, but..." is where the

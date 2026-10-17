@@ -1,7 +1,16 @@
-import { listReplicaSkills, type ReplicaSkill, type ReplicaSkillId, replicaSkillIds } from "./skills.js";
+import {
+  listReplicaSkills,
+  type ReplicaSkill,
+  type ReplicaSkillId,
+  replicaSkillIds,
+} from "./skills.js";
 
 const artifacts: Record<ReplicaSkillId, readonly string[]> = {
-  "replica-recon": ["replica/recon.md", "replica/features.csv", "replica/screens/"],
+  "replica-recon": [
+    "replica/recon.md",
+    "replica/features.csv",
+    "replica/screens/",
+  ],
   "replica-architect": ["replica/architecture.md"],
   "replica-design": ["replica/design/tokens.json"],
   "replica-build": ["replica/build/"],
@@ -21,7 +30,9 @@ export interface ReplicaPipelineStage extends ReplicaSkill {
 }
 
 export async function replicaPipeline(): Promise<ReplicaPipelineStage[]> {
-  const skills = new Map((await listReplicaSkills()).map(skill => [skill.id, skill]));
+  const skills = new Map(
+    (await listReplicaSkills()).map((skill) => [skill.id, skill]),
+  );
   return replicaSkillIds.map((id, index) => ({
     ...skills.get(id)!,
     index,

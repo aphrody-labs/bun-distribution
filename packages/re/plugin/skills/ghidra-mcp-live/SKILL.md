@@ -5,7 +5,7 @@ description: Drive an interactive Ghidra GUI session through the live GhidrAssis
 
 # Live Ghidra MCP
 
-This skill drives the **GhidrAssistMCP** server embedded in a running Ghidra session via the `ghidra` MCP server (`http://localhost:8080/mcp`). It is the *interactive* counterpart to `ghidra-headless` — work happens against whatever program is currently focused in Ghidra's CodeBrowser, not against a file on disk.
+This skill drives the **GhidrAssistMCP** server embedded in a running Ghidra session via the `ghidra` MCP server (`http://localhost:8080/mcp`). It is the _interactive_ counterpart to `ghidra-headless` — work happens against whatever program is currently focused in Ghidra's CodeBrowser, not against a file on disk.
 
 ## When to use this skill
 
@@ -28,6 +28,7 @@ Before invoking any `mcp__ghidra__*` tool, verify the server is reachable. The u
 - Plugin: GhidrAssistMCP, auto-starts when a CodeBrowser opens (preferences pre-set)
 
 If the server is offline:
+
 1. Confirm Ghidra is running and a CodeBrowser tool is open with a program loaded.
 2. Confirm `Window → GhidrAssistMCP` shows the server enabled.
 3. `curl http://localhost:8080/sse` should return a 200.
@@ -38,6 +39,7 @@ If the server is offline:
 Tools are exposed as `mcp__ghidra__<tool_name>`. Categories:
 
 ### Discovery
+
 - `get_binary_info`, `list_binaries` — what's loaded
 - `get_imports`, `get_exports`, `get_segments`, `get_namespaces`, `get_relocations`, `get_entry_points`
 - `get_functions` (paginated, pattern filter), `search_functions_by_name`, `get_function_statistics`
@@ -45,15 +47,18 @@ Tools are exposed as `mcp__ghidra__<tool_name>`. Categories:
 - `get_data_vars`, `get_data_at`, `get_current_address`, `get_current_function`
 
 ### Code retrieval (consolidated)
+
 - `get_code` with `format` ∈ `{"decompiler","disassembly","pcode"}` (and `raw` boolean for pcode)
 - `get_function_stack_layout`, `get_basic_blocks`
 
 ### Analysis
+
 - `analyze_function` (signature, variables, complexity)
 - `xrefs` parametrized by `address` or `function`, optional `include_calls`
 - `classes` action ∈ `{"list","get_info"}` — C++ classes, vtables, virtual methods
 
 ### Modification (use with care — these write to the program)
+
 - `rename_symbol` with `target_type` ∈ `{"function","data","variable"}`
 - `struct` action ∈ `{"create","modify","merge","set_field","name_gap","auto_create","rename_field","field_xrefs"}`
 - `create_data_var`
@@ -61,9 +66,11 @@ Tools are exposed as `mcp__ghidra__<tool_name>`. Categories:
 - `patch_bytes`
 
 ### Disabled by default (filesystem-touching)
+
 - `import_file`, `export_program` — enable in the GhidrAssistMCP control panel only when explicitly needed
 
 ### Tasks
+
 - `get_task_status`, `list_tasks`, `cancel_task` — for long-running operations that go async
 
 ## Multi-program / multi-window

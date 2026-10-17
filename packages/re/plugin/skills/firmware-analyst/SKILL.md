@@ -6,7 +6,7 @@ description: Analyze embedded firmware, raw ARM or MIPS images, bootloaders, RTO
 You analyze embedded firmware. The shape of the work is fundamentally different from desktop binaries:
 
 - **Often raw / no headers** — no PE/ELF magic, you must guess base address and architecture from byte patterns.
-- **Memory-mapped I/O** — peripheral registers like `0x40000000` (GPIO), `0xE000ED04` (NVIC ICSR on Cortex-M) are the program's *world*.
+- **Memory-mapped I/O** — peripheral registers like `0x40000000` (GPIO), `0xE000ED04` (NVIC ICSR on Cortex-M) are the program's _world_.
 - **No standard libraries** — uClibc, newlib, vendor SDKs (ESP-IDF, Zephyr, FreeRTOS, mbed). Function fingerprinting works differently.
 - **Vector tables and ISRs** — the entry point isn't `main`, it's `Reset_Handler` from the vector table at flash base.
 - **Fixed addressing** — no relocation, no ASLR. Constants in the code are real addresses in the device's memory map.
@@ -31,6 +31,7 @@ Before opening Ghidra, decide:
 - Console BIOS, firmware dumps and ROMs (GBA/DS BIOS, DS firmware, PlayStation BIOS, NES/GBA/NDS/N64/GameCube images): `re formats header <file>` (MCP `formats_inspect`) identifies the format, maps it at its reset address with the CPU and matches the public firmware hashes and the free registry (OpenBIOS, Normmatt); `re formats disasm` disassembles the reset path, `re pipeline <file> --target firmware` lifts it.
 
 **Live GUI** when image is loaded:
+
 - `mcp__ghidra__get_binary_info` — confirm Ghidra's guess.
 - `mcp__ghidra__get_segments` — flash / RAM mapping.
 - `mcp__ghidra__get_strings` — bootloader banners, `printf` format strings, U-Boot banners give base address hints.
@@ -39,6 +40,7 @@ Before opening Ghidra, decide:
 - `mcp__ghidra__xrefs` on peripheral addresses (after you've identified them from the chip's memory map).
 
 **Disk-only** image:
+
 - `ghidra-headless` skill with `-Processor "ARM:LE:32:v7"` (or appropriate) and `-NoAnalysis` first to dump strings + symbols quickly. Then re-run with full analysis once you've confirmed arch + base.
 
 ## Common workflows
@@ -55,6 +57,7 @@ Before opening Ghidra, decide:
 ### Recognize peripheral access
 
 Maintain a mental map (or a Ghidra memory-map file) for the target chip:
+
 - STM32F4: GPIO at `0x40020000`, RCC at `0x40023800`, USART2 at `0x40004400`.
 - ESP32: GPIO at `0x3FF44000`, UART0 at `0x3FF40000`.
 - nRF52: GPIO at `0x50000000`, UART0 at `0x40002000`.
@@ -65,6 +68,7 @@ When the code stores to one of those addresses, name the destination accordingly
 ### Extract a Linux squashfs / cramfs from a router
 
 Outside Ghidra's scope. Tell the user:
+
 1. `binwalk -e firmware.bin` — extracts squashfs / jffs2 / cpio chunks.
 2. After extraction, treat the userspace ELFs as desktop binaries (binary-triage / vulnerability-hunter).
 3. Kernel module `.ko` → load in Ghidra as ELF, but apply kernel symbol macros.

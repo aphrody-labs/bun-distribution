@@ -69,11 +69,11 @@ URLs.
 
 The domain, after the user buys it at any registrar:
 
-| record | name | value |
-| --- | --- | --- |
-| A | @ | the host's apex IP (Vercel: shown in the domain settings) |
-| CNAME | www | the host's target (Vercel: `cname.vercel-dns.com`) |
-| TXT | @ or a subdomain | the host's verification value, if asked |
+| record | name             | value                                                     |
+| ------ | ---------------- | --------------------------------------------------------- |
+| A      | @                | the host's apex IP (Vercel: shown in the domain settings) |
+| CNAME  | www              | the host's target (Vercel: `cname.vercel-dns.com`)        |
+| TXT    | @ or a subdomain | the host's verification value, if asked                   |
 
 Email DNS from the email provider: SPF (TXT), DKIM (CNAME or TXT), and a
 DMARC record starting at `v=DMARC1; p=none; rua=mailto:you@yourdomain` then

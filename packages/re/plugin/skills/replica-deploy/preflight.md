@@ -1,6 +1,6 @@
 # Deploy checklist: {{your app}}
 
-Date: {{YYYY-MM-DD}}  Commit: {{sha}}  Go from user: {{yes / not yet}}
+Date: {{YYYY-MM-DD}} Commit: {{sha}} Go from user: {{yes / not yet}}
 
 ## Preflight (all must pass)
 

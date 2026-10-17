@@ -14,15 +14,15 @@ You analyze Nintendo 3DS (codename CTR) binaries. The 3DS is structurally differ
 
 ## Formats — what kind of file are you looking at?
 
-| Ext | What | How to analyze |
-|---|---|---|
-| `.3ds` / `.cci` | Cartridge image — multiple partitions, signed | `3dstool` to split into partitions |
-| `.cia` | Installable archive — ticket + tmd + content | `ctrtool` to extract content |
-| `.cxi` | Executable content (a single .3DS partition's content) | Most interesting; contains exefs+romfs |
-| `.exefs` | Executable filesystem inside CXI | Has `.code` (the real binary), `icon`, `banner`, `logo` |
-| `.romfs` | Read-only data filesystem inside CXI | Game assets (text, models, textures, scripts) |
-| `.3dsx` | Homebrew executable (loaded via Homebrew Launcher) | ELF-like; Ghidra loads with ARM:LE:32:v6 |
-| `.cro` / `.crs` | Code Relocatable Object — loadable module | Less common; loaded by code dynamically |
+| Ext             | What                                                   | How to analyze                                          |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| `.3ds` / `.cci` | Cartridge image — multiple partitions, signed          | `3dstool` to split into partitions                      |
+| `.cia`          | Installable archive — ticket + tmd + content           | `ctrtool` to extract content                            |
+| `.cxi`          | Executable content (a single .3DS partition's content) | Most interesting; contains exefs+romfs                  |
+| `.exefs`        | Executable filesystem inside CXI                       | Has `.code` (the real binary), `icon`, `banner`, `logo` |
+| `.romfs`        | Read-only data filesystem inside CXI                   | Game assets (text, models, textures, scripts)           |
+| `.3dsx`         | Homebrew executable (loaded via Homebrew Launcher)     | ELF-like; Ghidra loads with ARM:LE:32:v6                |
+| `.cro` / `.crs` | Code Relocatable Object — loadable module              | Less common; loaded by code dynamically                 |
 
 The interesting binary is always `.code` inside `exefs`. Once you have `.code` extracted, load it in Ghidra as **`ARM:LE:32:v6`** (some 3DS code uses Cortex-A9 / `:v7`, but `v6` works for most game code).
 
@@ -30,22 +30,23 @@ The interesting binary is always `.code` inside `exefs`. Once you have `.code` e
 
 The user runs **Azahar** (Citra fork). On Windows the data directory is `$env:APPDATA\Azahar` (i.e. `%APPDATA%\Azahar`); on Linux/macOS it's `~/.local/share/azahar` / `~/Library/Application Support/Azahar`. Critical paths:
 
-| Subdir | Purpose |
-|---|---|
-| `roms/` | Source ROMs — `.3ds`, `.cia`, `.3dsx` |
-| `dump/romfs/` | RomFS extracted by Azahar's "Dump RomFS" feature |
-| `dump/textures/` | Texture dumps |
-| `load/textures/`, `load/mods/` | Reload modified textures and mods at runtime |
-| `nand/` | Emulated NAND — system titles, friend list, etc. |
-| `sdmc/` | Emulated SD card — installed CIAs land here under `Nintendo 3DS/<ID>/` |
-| `cheats/<title-id>.txt` | Action Replay-style cheats |
-| `states/<title-id>.NN.cst` | Save states (full RAM snapshot — ANALYZABLE!) |
-| `log/azahar_log.txt` | Runtime log — service calls, errors |
-| `config/qt-config.ini` (not in repo) | Emulator config |
-| `source/` | Azahar built from source |
-| `azahar-mcp/` | The user already has an Azahar MCP integration — coordinate with it |
+| Subdir                               | Purpose                                                                |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| `roms/`                              | Source ROMs — `.3ds`, `.cia`, `.3dsx`                                  |
+| `dump/romfs/`                        | RomFS extracted by Azahar's "Dump RomFS" feature                       |
+| `dump/textures/`                     | Texture dumps                                                          |
+| `load/textures/`, `load/mods/`       | Reload modified textures and mods at runtime                           |
+| `nand/`                              | Emulated NAND — system titles, friend list, etc.                       |
+| `sdmc/`                              | Emulated SD card — installed CIAs land here under `Nintendo 3DS/<ID>/` |
+| `cheats/<title-id>.txt`              | Action Replay-style cheats                                             |
+| `states/<title-id>.NN.cst`           | Save states (full RAM snapshot — ANALYZABLE!)                          |
+| `log/azahar_log.txt`                 | Runtime log — service calls, errors                                    |
+| `config/qt-config.ini` (not in repo) | Emulator config                                                        |
+| `source/`                            | Azahar built from source                                               |
+| `azahar-mcp/`                        | The user already has an Azahar MCP integration — coordinate with it    |
 
 The user's primary game is **Inazuma Eleven 3** (title `00040000000F7D00`):
+
 - ROM: `roms/DIE3SFR.3ds` (1.76 GB, "S" = Spanish region)
 - Tooling: `ie3/3ds-tools/` (3dstool, ctrtool, makerom)
 - Existing dumps: `ie3/dumps/`, `ie3/dump_3dstool/`, `ie3/dump_b123h/`, `ie3/dump_sad_wav_full/`
@@ -69,6 +70,7 @@ Updates patch the base game's `.code` and assets — analyzing the latest update
 ## Tool routing
 
 **Ghidra (live MCP server)** — once `.code` is loaded:
+
 - `mcp__ghidra__get_imports` — but 3DS games have NO standard imports the way Windows does. Instead, look for **service handles**: `svchSendSyncRequest` patterns. The `.code` binary has a small list of imported services (sm:, fs:USER, GSP::Gpu, NS, APT, AC, NDM, etc.) referenced by string in RODATA.
 - `mcp__ghidra__search_strings` for **service names** (`fs:USER`, `gsp::Gpu`, `APT:U`) — they're how the game finds services. xref them to find every service-call site.
 - `mcp__ghidra__get_code(format="decompiler")` on the function around the SVC.
@@ -76,36 +78,38 @@ Updates patch the base game's `.code` and assets — analyzing the latest update
 **ghidra-headless skill** — same; loads `.code` files directly.
 
 **Outside Ghidra (CLI tools the user has):**
+
 - `3dstool -xtf cci <rom.3ds>` — split CCI into partitions.
 - `ctrtool` — inspect CIA / CCI / CXI / TICKET / TMD; extracts exefs and romfs.
 - `makerom` — package back (rare in pure analysis).
 - `ninfs` — FUSE-mount 3DS filesystems on Linux/macOS.
 
 **Azahar-side analysis (powerful for RAM archeology):**
+
 - Save states are full RAM snapshots. With the game loaded and `.code` analyzed, find a struct in `.code`, then **search the same byte pattern in the `.cst`** to locate the live instance.
 - Cheats file (`cheats/00040000000F7D00.txt`) is Action Replay format — ranged write operations on RAM addresses. Reverse the cheat to find code addresses.
 - `log/azahar_log.txt` — Azahar logs every IPC service request. Search for the service whose handler you want to find, then trace the corresponding code-side call.
 
 ## Service map you should keep handy
 
-| Service | Purpose |
-|---|---|
-| `srv:` | Service Manager — every other service is found through it |
-| `fs:USER` | Filesystem (RomFS, NAND, SDMC, ExtData) |
-| `gsp::Gpu` | Graphics — VRAM, cmdlists, shaders |
-| `gsp::Lcd` | LCD control — backlight, brightness |
-| `APT:U` | Application — life cycle, home menu integration |
-| `NS:S` | Namespaces — launching titles |
-| `AC:U` | AC adapter / wireless connectivity status |
-| `cfg:u` | System config — language, region, console serial |
-| `frd:u` | Friend list |
-| `news:s` | Notifications |
-| `boss:U` | Background tasks (DLC fetch, etc.) |
-| `mic:u` | Microphone |
-| `cam:u` | Camera |
-| `csnd:SND` | Audio |
-| `ptm:u` | Battery, sleep state |
-| `qtm:s` | Mii face tracking |
+| Service    | Purpose                                                   |
+| ---------- | --------------------------------------------------------- |
+| `srv:`     | Service Manager — every other service is found through it |
+| `fs:USER`  | Filesystem (RomFS, NAND, SDMC, ExtData)                   |
+| `gsp::Gpu` | Graphics — VRAM, cmdlists, shaders                        |
+| `gsp::Lcd` | LCD control — backlight, brightness                       |
+| `APT:U`    | Application — life cycle, home menu integration           |
+| `NS:S`     | Namespaces — launching titles                             |
+| `AC:U`     | AC adapter / wireless connectivity status                 |
+| `cfg:u`    | System config — language, region, console serial          |
+| `frd:u`    | Friend list                                               |
+| `news:s`   | Notifications                                             |
+| `boss:U`   | Background tasks (DLC fetch, etc.)                        |
+| `mic:u`    | Microphone                                                |
+| `cam:u`    | Camera                                                    |
+| `csnd:SND` | Audio                                                     |
+| `ptm:u`    | Battery, sleep state                                      |
+| `qtm:s`    | Mii face tracking                                         |
 
 When the disassembly does `mov r0, <handle>; svc 0x32` (IPC SendSyncRequest), the handle was obtained from `srv:GetServiceHandle("name")`. The string is your starting point.
 

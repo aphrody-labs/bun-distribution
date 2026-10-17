@@ -3,11 +3,11 @@
 REA uses caller-supplied, unchanged Python packages. It vendors no pwntools,
 pyelftools or Unicorn implementation and never installs these dependencies.
 
-| Upstream | Exact verified profile | License | Role |
-| --- | --- | --- | --- |
-| [pwntools](https://github.com/Gallopsled/pwntools) | 4.15.0; tag commit `3ad86ec5adab1abf9781ca7552a6f5d7cff7a33c` | MIT | ELF analysis and static mitigation/GOT/PLT heuristics |
-| [pyelftools](https://github.com/eliben/pyelftools) | 0.33 | Public domain | Original ELF sections, segments, symbols and relocations |
-| [Unicorn](https://github.com/unicorn-engine/unicorn) | 2.1.2 | GPL-2.0 | Upstream PLT emulation; distinct from executing the target as a host process |
+| Upstream                                             | Exact verified profile                                        | License       | Role                                                                         |
+| ---------------------------------------------------- | ------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
+| [pwntools](https://github.com/Gallopsled/pwntools)   | 4.15.0; tag commit `3ad86ec5adab1abf9781ca7552a6f5d7cff7a33c` | MIT           | ELF analysis and static mitigation/GOT/PLT heuristics                        |
+| [pyelftools](https://github.com/eliben/pyelftools)   | 0.33                                                          | Public domain | Original ELF sections, segments, symbols and relocations                     |
+| [Unicorn](https://github.com/unicorn-engine/unicorn) | 2.1.2                                                         | GPL-2.0       | Upstream PLT emulation; distinct from executing the target as a host process |
 
 The adapter checks all three runtime versions before importing the ELF engine.
 Original upstream code/licenses remain in the caller-selected environment.
