@@ -1,0 +1,22 @@
+{
+  "log-driver": "local",
+  "log-opts": {
+    "max-size": "20m",
+    "max-file": "3"
+  },
+  "default-ulimits": {
+    "nofile": {
+      "Name": "nofile",
+      "Hard": 1048576,
+      "Soft": 1048576
+    }
+  },
+  "runtimes": {
+    "io.containerd.wasmtime.v1": {
+      "runtimeType": "io.containerd.wasmtime.v1"
+    }
+  },
+  "features": {
+    "containerd-snapshotter": true
+  }
+}
