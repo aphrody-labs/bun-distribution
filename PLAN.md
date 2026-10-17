@@ -211,6 +211,7 @@
       `packages/re/plugin`. Rose Griffon docs stay with `aphrody-labs/rosegriffon`;
       duplicates of existing owners are not carried. No IECODE component
       remains pending.
+- [x] NIE readers qualified on the real Inazuma Eleven: Victory Road install on the VPS (`/home/ubuntu/apps/nie/game`, read-only): `nie info` (nie.exe 33.9 MB, VFS 255,308 entries in 936 packs, launch chain complete), `nie format` and `nie decode` on a real `.cfg.bin` (T2B). The `rg-core`-supervised `aphrody-nie-model-serve` answers `/health` and `/ui/theme.json`.
 - [ ] Qualify the IECODE C++ member through `bun msvc vcpkg`.
 
 ## IECODE absorption, RE merge and forge recovery — 2026-10-16
