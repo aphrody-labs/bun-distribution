@@ -18,14 +18,14 @@ large_enum_variant = "allow"
 result_large_err = "allow"
 
 [dependencies]
-deckcraft-isobmff = { path = "../deckcraft-isobmff" }
-deckcraft-matroska = { path = "../deckcraft-matroska" }
-deckcraft-ogg = { path = "../deckcraft-ogg" }
-deckcraft-opus = { path = "../deckcraft-opus" }
-deckcraft-h264 = { path = "../deckcraft-h264" }
-deckcraft-hevc = { path = "../deckcraft-hevc" }
-deckcraft-vp9 = { path = "../deckcraft-vp9" }
-deckcraft-av1 = { path = "../deckcraft-av1" }
+filmcraft-isobmff = { path = "../filmcraft-isobmff" }
+filmcraft-matroska = { path = "../filmcraft-matroska" }
+filmcraft-ogg = { path = "../filmcraft-ogg" }
+filmcraft-opus = { path = "../filmcraft-opus" }
+filmcraft-h264 = { path = "../filmcraft-h264" }
+filmcraft-hevc = { path = "../filmcraft-hevc" }
+filmcraft-vp9 = { path = "../filmcraft-vp9" }
+filmcraft-av1 = { path = "../filmcraft-av1" }
 thiserror = "2"
 log = "0.4"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }

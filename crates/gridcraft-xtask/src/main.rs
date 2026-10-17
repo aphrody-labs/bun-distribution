@@ -11,8 +11,6 @@ mod keytips;
 mod layers;
 #[cfg_attr(not(feature = "engine"), allow(dead_code))]
 mod parity;
-mod stats;
-mod version;
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
@@ -45,11 +43,11 @@ fn main() -> ExitCode {
         Some("layers") => cmd_layers(),
         Some("wasm") => cmd_wasm(),
         Some("ci") => cmd_ci(),
-        Some("stats") => stats::run(&root(), rest.contains(&"--exact")),
+        Some("stats") => craft_xtask::stats::run(rest.contains(&"--exact")),
         Some("parity") => parity::run(&root(), &rest),
         Some("keytips") => keytips::run(&root(), &rest),
         Some("ico") => ico::run(&rest),
-        Some("version") => version::run(&root(), &rest),
+        Some("version") => craft_xtask::version::run(&rest),
         Some("-h" | "--help" | "help") | None => {
             print!("{USAGE}");
             Ok(())

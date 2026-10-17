@@ -20,7 +20,7 @@ result_large_err = "allow"
 [dependencies]
 deckcraft-geom = { path = "../deckcraft-geom" }
 deckcraft-color = { path = "../deckcraft-color" }
-deckcraft-metafile = { path = "../deckcraft-metafile" }
+craft-metafile = { path = "../craft-metafile" }
 deckcraft-model = { path = "../deckcraft-model" }
 deckcraft-fonts = { path = "../deckcraft-fonts" }
 deckcraft-text = { path = "../deckcraft-text" }

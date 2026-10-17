@@ -67,8 +67,6 @@ mod glibc_compat;
 
 // Zero-copy exports (caller-owned buffers): CPU rasterizer and tool-call repair.
 #[cfg(not(target_arch = "wasm32"))]
-mod softraster;
-#[cfg(not(target_arch = "wasm32"))]
 mod zerocopy;
 #[cfg(not(target_arch = "wasm32"))]
 pub use zerocopy::*;

@@ -18,7 +18,6 @@ members = [
   "crates/android-native",
   "crates/bunos-utils",
   "crates/aphrody-svg",
-  "crates/aphrody-aarch64",
   "crates/aphrody-switch",
   "crates/aphrody-wii",
   "crates/aphrody-wii-image",
@@ -84,6 +83,7 @@ members = [
   "crates/aphrody-rollout",
   "crates/aphrody-rag-eval",
   "crates/aphrody-rag-core",
+  "crates/aphrody-rust",
   "crates/aphrody-rag",
   "crates/aphrody-ocr-vlm",
   "crates/aphrody-ocr-onnx",
@@ -119,7 +119,6 @@ members = [
     "crates/craft-ui",
     "crates/craft-fonts",
     "crates/craft-fonts-tests",
-    "crates/deckcraft-matroska",
     "crates/pdfcraft-compare",
     "crates/cadcraft-cli",
     "crates/cadcraft",
@@ -173,32 +172,25 @@ members = [
     "crates/browser_emulation",
     "crates/capture_harness",
     "crates/cadcraft-xtask",
+    "crates/craft-xtask",
     "crates/cloudflare_errors",
     "crates/cloudflare_mitigation",
     "crates/cookie_store_wrapper",
     "crates/deckcraft-anim",
-    "crates/deckcraft-av1",
-    "crates/deckcraft-bitstream",
     "crates/deckcraft-color",
     "crates/deckcraft-engine",
     "crates/deckcraft-fonts",
     "crates/deckcraft-format",
     "crates/deckcraft-geom",
-    "crates/deckcraft-h264",
-    "crates/deckcraft-hevc",
-    "crates/deckcraft-isobmff",
     "crates/deckcraft-mcp",
     "crates/deckcraft-media",
-    "crates/deckcraft-metafile",
+    "crates/craft-metafile",
     "crates/deckcraft-model",
-    "crates/deckcraft-ogg",
-    "crates/deckcraft-opus",
     "crates/deckcraft-pdf",
     "crates/deckcraft-pptx",
     "crates/deckcraft-render",
     "crates/deckcraft-text",
     "crates/deckcraft-ui-egui",
-    "crates/deckcraft-vp9",
     "crates/deckcraft-xtask",
     "crates/designcraft-color",
     "crates/designcraft-compose",
@@ -473,7 +465,6 @@ members = [
     "crates/wordcraft-geom",
     "crates/wordcraft-layout",
     "crates/wordcraft-mcp",
-    "crates/wordcraft-metafile",
     "crates/wordcraft-pdf",
     "crates/wordcraft-proof",
     "crates/wordcraft-render",
@@ -577,7 +568,6 @@ members = [
   "crates/aphrody-nie-trace",
   "crates/aphrody-nie-ui",
   "crates/aphrody-nie-video",
-  "crates/aphrody-nie-viewer-web",
   "crates/aphrody-nie-viola",
   "crates/aphrody-nie-wasm",
   "crates/aphrody-nie-wiki",
@@ -668,6 +658,8 @@ aphrody-rag-core = { path = "crates/aphrody-rag-core", version = "1.4.4", featur
 rookie-cookies = { version = "0.6.0" }
 yolo-runtime = { path = "crates/yolo-runtime", version = "1.4.4" }
 bun-python-host = { path = "toolchains/bun/packages/bun-python-native/crates/bun-python-host" }
+# PyO3 resolves to the fork pinned by toolchains/bun ([patch.crates-io] below).
+pyo3 = { version = "0.29.3" }
 mimalloc = { version = "0.1", default-features = false, features = [] }
 aphrody-backend = { path = "crates/aphrody-backend", version = "1.4.4", features = [] }
 libm = { version = "0.2.16" }
@@ -719,7 +711,6 @@ craft-cms = { path = "crates/craft-cms", version = "1.4.4" }
 craft-print = { path = "crates/craft-print", version = "1.4.4" }
 craft-quit = { path = "crates/craft-quit", version = "1.4.4" }
 craft-ui = { path = "crates/craft-ui", version = "1.4.4" }
-deckcraft-matroska = { path = "crates/deckcraft-matroska", version = "1.4.4" }
 pdfcraft-compare = { path = "crates/pdfcraft-compare", version = "1.4.4" }
 cadcraft-color = { path = "crates/cadcraft-color", version = "1.4.4" }
 cadcraft-geom = { path = "crates/cadcraft-geom", version = "1.4.4" }
@@ -855,7 +846,6 @@ aphrody-gpu-backend = { path = "crates/aphrody-gpu-backend", features = ["webgpu
 aphrody-wii = { path = "crates/aphrody-wii" }
 aphrody-wii-image = { path = "crates/aphrody-wii-image" }
 aphrody-switch = { path = "crates/aphrody-switch" }
-aphrody-aarch64 = { path = "crates/aphrody-aarch64" }
 ghidra-decompiler = { path = "crates/ghidra-decompiler" }
 parking_lot = "0.12.3"
 proc-bitfield = { version = "0.5" }
@@ -1190,7 +1180,7 @@ aphrody-re = { package = "bun-re", path = "crates/re", version = "1.0.0-canary" 
 aphrody-web-crawl = "1.0.0"
 aphrody-os-re = { package = "bun-re", path = "crates/re", version = "1.0.0-canary" }
 aphrody-identity = { path = "crates/aphrody-identity" }
-aphrody-softraster = "1.0.0-canary"
+aphrody-softraster = { path = "crates/aphrody-softraster" }
 aphrody-sprite-sheet = "1.0.0-canary"
 aphrody-nie-geom = { path = "crates/aphrody-nie-geom",  }
 aphrody-nie-video = { path = "crates/aphrody-nie-video",  }
@@ -1239,7 +1229,6 @@ aphrody-nie-runtime = { default-features = false, path = "crates/aphrody-nie-run
 aphrody-nie-save = { default-features = false, path = "crates/aphrody-nie-save",  }
 aphrody-nie-seed = { default-features = false, path = "crates/aphrody-nie-seed",  }
 aphrody-nie-trace = { default-features = false, path = "crates/aphrody-nie-trace",  }
-aphrody-nie-viewer-web = { path = "crates/aphrody-nie-viewer-web",  }
 aphrody-nie-viola = { path = "crates/aphrody-nie-viola",  }
 aphrody-nie-wasm = { path = "crates/aphrody-nie-wasm",  }
 aphrody-nie-wiki = { path = "crates/aphrody-nie-wiki",  }
@@ -1293,6 +1282,12 @@ vk-mem = "0.5"
 spirv-cross2 = "0.7"
 
 [patch.crates-io]
+# PyO3: same fork and pin as the [patch.crates-io] of toolchains/bun/Cargo.toml.
+pyo3 = { git = "https://github.com/aphrody-labs/pyo3", rev = "451d99fdcdcddf159e8e0a1186960b332cdb5d7c" }
+pyo3-build-config = { git = "https://github.com/aphrody-labs/pyo3", rev = "451d99fdcdcddf159e8e0a1186960b332cdb5d7c" }
+pyo3-ffi = { git = "https://github.com/aphrody-labs/pyo3", rev = "451d99fdcdcddf159e8e0a1186960b332cdb5d7c" }
+pyo3-macros = { git = "https://github.com/aphrody-labs/pyo3", rev = "451d99fdcdcddf159e8e0a1186960b332cdb5d7c" }
+pyo3-macros-backend = { git = "https://github.com/aphrody-labs/pyo3", rev = "451d99fdcdcddf159e8e0a1186960b332cdb5d7c" }
 zip2 = { package = "zip", git = "https://github.com/zip-rs/zip2", tag = "v2.6.1" }
 zip = { git = "https://github.com/zip-rs/zip2", tag = "v8.6.0" }
 bun-re = { path = "crates/re" }
@@ -1306,12 +1301,3 @@ hayro-jbig2 = { path = "apps/pdfcraft/vendor/hayro-jbig2" }
 lopdf = { path = "apps/pdfcraft/vendor/lopdf" }
 winit = { path = "apps/pdfcraft/vendor/winit" }
 egui-wgpu = { path = "apps/pdfcraft/vendor/egui-wgpu" }
-
-[patch."https://github.com/aphrody-labs/aphrody"]
-aphrody-config = { path = "crates/aphrody-config" }
-aphrody-mcp-client = { path = "crates/aphrody-mcp-client" }
-aphrody-model-client = { path = "crates/aphrody-model-client" }
-aphrody-patch = { path = "crates/aphrody-patch" }
-aphrody-proc = { path = "crates/aphrody-proc" }
-aphrody-rag-core = { path = "crates/aphrody-rag-core" }
-aphrody-toolcall = { path = "crates/aphrody-toolcall" }

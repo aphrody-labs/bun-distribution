@@ -11,16 +11,16 @@ repository = "https://github.com/storytold/soundcraft"
 default = []
 # Frame-parallel H.264 and slice-parallel ProRes decoding (rayon). Off by default: SoundCraft
 # decodes on its own background thread and only needs one picture at a time.
-threads = ["dep:rayon"]
+threads = ["filmcraft-h264/threads", "filmcraft-prores/threads"]
 
 [dependencies]
 thiserror = "2"
 serde = { version = "1", features = ["derive", "rc"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
-rayon = { version = "1", optional = true }
-
-[dev-dependencies]
-proptest = "1"
+filmcraft-bitstream = { path = "../filmcraft-bitstream" }
+filmcraft-h264 = { path = "../filmcraft-h264", default-features = false }
+filmcraft-isobmff = { path = "../filmcraft-isobmff" }
+filmcraft-prores = { path = "../filmcraft-prores", default-features = false }
 
 [lints.rust]
 unsafe_code = "forbid"

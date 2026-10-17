@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use deckcraft_fonts::{FontDb, FontFace};
-use deckcraft_metafile::{HAlign, Item, PlacedItem, Text, Tile, VAlign};
+use craft_metafile::{HAlign, Item, PlacedItem, Text, Tile, VAlign};
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 use skrifa::MetadataProvider as _;
 use vello_cpu::{Pixmap, RenderContext, Resources, peniko};
@@ -28,13 +28,13 @@ const DEFAULT_EM: f64 = 12.0;
 
 /// Is `bytes` a WMF or EMF file?
 pub fn is_metafile(bytes: &[u8]) -> bool {
-    deckcraft_metafile::is_metafile(bytes)
+    craft_metafile::is_metafile(bytes)
 }
 
 /// Draw the metafile `bytes` into straight RGBA with its longer side `side` px (transparent where
 /// it draws nothing). `None` when it doesn't parse or has no size.
 pub fn rasterize(bytes: &[u8], side: u32) -> Option<image::RgbaImage> {
-    let mut pic = deckcraft_metafile::parse(bytes).ok()?;
+    let mut pic = craft_metafile::parse(bytes).ok()?;
     if !pic.has_size() {
         return None;
     }

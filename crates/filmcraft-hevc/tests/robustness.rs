@@ -47,7 +47,9 @@ fn to_hvcc(data: &[u8]) -> (Vec<u8>, Vec<Vec<u8>>) {
 fn hvcc_input_matches_reference() {
     for name in ["medium", "intra_main10"] {
         let f = common::fixture(name);
-        let Some((hevc, yuv)) = common::ensure(f) else { return };
+        let Some((hevc, yuv)) = common::ensure(f) else {
+            return;
+        };
         let (hvcc, samples) = to_hvcc(&std::fs::read(hevc).unwrap());
         let mut dec = Decoder::from_hvcc(&hvcc).unwrap();
         assert_eq!(dec.nal_length_size(), Some(4));
@@ -57,14 +59,29 @@ fn hvcc_input_matches_reference() {
         }
         pics.extend(dec.flush());
         let reference = std::fs::read(yuv).unwrap();
-        common::compare(&pics, &reference, f.width as usize, f.height as usize, f.bit_depth).unwrap();
+        common::compare(
+            &pics,
+            &reference,
+            f.width as usize,
+            f.height as usize,
+            f.bit_depth,
+        )
+        .unwrap();
         let mut pts: Vec<i64> = pics.iter().map(|p| p.pts).collect();
         pts.sort();
-        assert_eq!(pts, (0..samples.len() as i64).map(|i| i * 1000).collect::<Vec<_>>());
+        assert_eq!(
+            pts,
+            (0..samples.len() as i64)
+                .map(|i| i * 1000)
+                .collect::<Vec<_>>()
+        );
         let p0 = &pics[0];
         assert!(p0.key);
         assert_eq!(p0.bit_depth, f.bit_depth);
-        assert_eq!((p0.y_stride, p0.uv_stride), (f.width as usize, f.width as usize / 2));
+        assert_eq!(
+            (p0.y_stride, p0.uv_stride),
+            (f.width as usize, f.width as usize / 2)
+        );
     }
 }
 
@@ -80,7 +97,9 @@ fn xorshift(seed: &mut u64) -> u64 {
 fn corrupted_streams_do_not_panic() {
     for name in ["medium", "bframes", "intra_main10", "rect_amp", "weightp"] {
         let f = common::fixture(name);
-        let Some((hevc, _)) = common::ensure(f) else { return };
+        let Some((hevc, _)) = common::ensure(f) else {
+            return;
+        };
         let data = std::fs::read(hevc).unwrap();
         let mut seed = 0x1234_5678_9abc_def0u64 ^ name.len() as u64;
         for round in 0..12 {

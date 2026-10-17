@@ -78,22 +78,32 @@ fn draft_mode_changes_only_flagged_non_reference_pictures() {
         let bps = if f.bit_depth > 8 { 2 } else { 1 };
         let fsize = (w * h + 2 * w.div_ceil(2) * h.div_ceil(2)) * bps;
         for threads in [1, 3] {
-            let pics = common::decode_file_opts(&hevc, threads, true).unwrap_or_else(|(au, e, _)| panic!("{name}: error at {au}: {e}"));
+            let pics = common::decode_file_opts(&hevc, threads, true)
+                .unwrap_or_else(|(au, e, _)| panic!("{name}: error at {au}: {e}"));
             common::check_pts(&pics).unwrap_or_else(|e| panic!("{name}: {e}"));
             assert_eq!(pics.len() * fsize, reference.len(), "{name}: picture count");
             let (mut draft, mut changed) = (0, 0);
             for (i, p) in pics.iter().enumerate() {
-                let bytes: Vec<u8> = [&p.y, &p.u, &p.v].iter().flat_map(|pl| pl.to_le_bytes()).collect();
+                let bytes: Vec<u8> = [&p.y, &p.u, &p.v]
+                    .iter()
+                    .flat_map(|pl| pl.to_le_bytes())
+                    .collect();
                 let same = bytes == reference[i * fsize..(i + 1) * fsize];
                 if p.draft {
                     draft += 1;
                     changed += !same as usize;
                 } else {
-                    assert!(same, "{name} (threads {threads}): picture {i} (not draft) differs from the reference");
+                    assert!(
+                        same,
+                        "{name} (threads {threads}): picture {i} (not draft) differs from the reference"
+                    );
                 }
             }
             assert!(draft > 0, "{name}: has non-reference pictures");
-            assert!(changed > 0, "{name}: skipping the in-loop filters changes some draft picture");
+            assert!(
+                changed > 0,
+                "{name}: skipping the in-loop filters changes some draft picture"
+            );
             checked += 1;
         }
     }
@@ -107,7 +117,9 @@ fn draft_mode_changes_only_flagged_non_reference_pictures() {
 #[ignore]
 fn coverage_report() {
     for f in common::FIXTURES {
-        let Some((hevc, _)) = common::ensure(f) else { continue };
+        let Some((hevc, _)) = common::ensure(f) else {
+            continue;
+        };
         let data = std::fs::read(hevc).unwrap();
         let mut dec = filmcraft_hevc::Decoder::new();
         for au in common::split_access_units(&data) {
@@ -122,13 +134,31 @@ fn coverage_report() {
 #[test]
 fn compare_detects_mismatch() {
     let f = common::fixture("intra_main10");
-    let Some((hevc, yuv)) = common::ensure(f) else { return };
-    let pics = common::decode_file_threads(&hevc, 1).map_err(|e| e.1).unwrap();
+    let Some((hevc, yuv)) = common::ensure(f) else {
+        return;
+    };
+    let pics = common::decode_file_threads(&hevc, 1)
+        .map_err(|e| e.1)
+        .unwrap();
     let mut reference = std::fs::read(yuv).unwrap();
-    common::compare(&pics, &reference, f.width as usize, f.height as usize, f.bit_depth).unwrap();
+    common::compare(
+        &pics,
+        &reference,
+        f.width as usize,
+        f.height as usize,
+        f.bit_depth,
+    )
+    .unwrap();
     let pos = reference.len() - 7;
     reference[pos] ^= 1;
-    let err = common::compare(&pics, &reference, f.width as usize, f.height as usize, f.bit_depth).unwrap_err();
+    let err = common::compare(
+        &pics,
+        &reference,
+        f.width as usize,
+        f.height as usize,
+        f.bit_depth,
+    )
+    .unwrap_err();
     assert!(err.contains("plane V"), "{err}");
 }
 
@@ -138,7 +168,14 @@ fn compare_detects_mismatch() {
 fn generate_fixtures() {
     let dir = common::fixtures_dir();
     for f in common::FIXTURES {
-        let outs = [dir.join(format!("{}.hevc", f.name)), dir.join(format!("{}.yuv", f.name))];
-        filmcraft_testkit::fixtures::generate_and_report(&format!("hevc/{}", f.name), &outs, || common::ensure(f));
+        let outs = [
+            dir.join(format!("{}.hevc", f.name)),
+            dir.join(format!("{}.yuv", f.name)),
+        ];
+        filmcraft_testkit::fixtures::generate_and_report(
+            &format!("hevc/{}", f.name),
+            &outs,
+            || common::ensure(f),
+        );
     }
 }

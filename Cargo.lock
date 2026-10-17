@@ -780,10 +780,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-aarch64"
-version = "0.1.1"
-
-[[package]]
 name = "aphrody-agent-home"
 version = "1.4.4"
 dependencies = [
@@ -1563,6 +1559,7 @@ dependencies = [
  "aphrody-oxc-bridge",
  "aphrody-proc",
  "aphrody-rag-core",
+ "aphrody-softraster",
  "aphrody-toolcall-repair",
  "async-trait",
  "base64 0.23.1",
@@ -2727,15 +2724,10 @@ name = "aphrody-nie-pe-inspect"
 version = "1.4.4"
 dependencies = [
  "anyhow",
+ "bun-re",
  "goblin 0.10.7",
- "googletest",
- "hex",
- "iced-x86",
  "serde",
  "serde_json",
- "sha2 0.10.9",
- "thiserror 2.0.21",
- "zerocopy 0.8.62",
 ]
 
 [[package]]
@@ -2793,7 +2785,7 @@ dependencies = [
  "aphrody-nie-core",
  "aphrody-nie-formats",
  "aphrody-nie-video",
- "aphrody-softraster 1.0.0-canary",
+ "aphrody-softraster",
  "bcdec_rs",
  "bytemuck",
  "clap",
@@ -2897,18 +2889,6 @@ name = "aphrody-nie-video"
 version = "1.4.4"
 dependencies = [
  "thiserror 2.0.21",
-]
-
-[[package]]
-name = "aphrody-nie-viewer-web"
-version = "1.4.4"
-dependencies = [
- "aphrody-nie-render3d",
- "console_error_panic_hook",
- "serde_json",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]
@@ -3259,6 +3239,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-rust"
+version = "1.4.4"
+dependencies = [
+ "aphrody-rag-core",
+ "pyo3",
+]
+
+[[package]]
 name = "aphrody-secrets"
 version = "1.4.4"
 dependencies = [
@@ -3344,12 +3332,6 @@ dependencies = [
  "tower-http 0.7.1",
  "url",
 ]
-
-[[package]]
-name = "aphrody-softraster"
-version = "1.0.0-canary"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "073386b2f750be9d9c99a1f6ab7b3fdbfee03e05b3e28cef34b415e916ad24fc"
 
 [[package]]
 name = "aphrody-softraster"
@@ -7512,6 +7494,7 @@ version = "1.0.0-canary"
 dependencies = [
  "aes 0.9.3",
  "anyhow",
+ "aphrody-nie-formats",
  "aphrody-nie-index",
  "aphrody-nie-net",
  "bytes",
@@ -7529,6 +7512,7 @@ dependencies = [
  "md-5 0.11.0",
  "memchr",
  "regex",
+ "rusqlite",
  "rusty-leveldb",
  "serde",
  "serde-wasm-bindgen",
@@ -8586,6 +8570,7 @@ dependencies = [
 name = "cadcraft-xtask"
 version = "0.6.2"
 dependencies = [
+ "craft-xtask",
  "serde_json",
 ]
 
@@ -10343,6 +10328,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "craft-metafile"
+version = "0.6.1"
+dependencies = [
+ "kurbo 0.13.1",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "craft-print"
 version = "1.4.4"
 dependencies = [
@@ -10384,6 +10377,13 @@ dependencies = [
  "egui_kittest",
  "image",
  "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "craft-xtask"
+version = "1.4.4"
+dependencies = [
  "serde_json",
 ]
 
@@ -11427,22 +11427,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deckcraft-av1"
-version = "0.6.1"
-dependencies = [
- "deckcraft-bitstream",
- "rayon",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "deckcraft-bitstream"
-version = "0.6.1"
-dependencies = [
- "proptest",
-]
-
-[[package]]
 name = "deckcraft-cli"
 version = "0.6.1"
 dependencies = [
@@ -11512,36 +11496,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deckcraft-h264"
-version = "0.6.1"
-dependencies = [
- "deckcraft-bitstream",
- "rayon",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "deckcraft-hevc"
-version = "0.6.1"
-dependencies = [
- "deckcraft-bitstream",
- "rayon",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "deckcraft-isobmff"
-version = "0.6.1"
-dependencies = [
- "deckcraft-bitstream",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "deckcraft-matroska"
-version = "1.4.4"
-
-[[package]]
 name = "deckcraft-mcp"
 version = "0.6.1"
 dependencies = [
@@ -11555,25 +11509,17 @@ dependencies = [
 name = "deckcraft-media"
 version = "0.6.1"
 dependencies = [
- "deckcraft-av1",
- "deckcraft-h264",
- "deckcraft-hevc",
- "deckcraft-isobmff",
- "deckcraft-matroska",
- "deckcraft-ogg",
- "deckcraft-opus",
- "deckcraft-vp9",
+ "filmcraft-av1",
+ "filmcraft-h264",
+ "filmcraft-hevc",
+ "filmcraft-isobmff",
+ "filmcraft-matroska",
+ "filmcraft-ogg",
+ "filmcraft-opus",
+ "filmcraft-vp9",
  "image",
  "log",
  "symphonia",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "deckcraft-metafile"
-version = "0.6.1"
-dependencies = [
- "kurbo 0.13.1",
  "thiserror 2.0.21",
 ]
 
@@ -11588,14 +11534,6 @@ dependencies = [
  "thiserror 2.0.21",
  "unicode-segmentation",
 ]
-
-[[package]]
-name = "deckcraft-ogg"
-version = "0.6.1"
-
-[[package]]
-name = "deckcraft-opus"
-version = "0.6.1"
 
 [[package]]
 name = "deckcraft-pdf"
@@ -11632,10 +11570,10 @@ dependencies = [
 name = "deckcraft-render"
 version = "0.6.1"
 dependencies = [
+ "craft-metafile",
  "deckcraft-color",
  "deckcraft-fonts",
  "deckcraft-geom",
- "deckcraft-metafile",
  "deckcraft-model",
  "deckcraft-text",
  "image",
@@ -11681,15 +11619,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deckcraft-vp9"
-version = "0.6.1"
-dependencies = [
- "deckcraft-bitstream",
- "rayon",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "deckcraft-web"
 version = "0.6.1"
 dependencies = [
@@ -11704,6 +11633,7 @@ dependencies = [
 name = "deckcraft-xtask"
 version = "0.6.1"
 dependencies = [
+ "craft-xtask",
  "serde_json",
 ]
 
@@ -12431,6 +12361,7 @@ dependencies = [
 name = "designcraft-xtask"
 version = "0.7.1"
 dependencies = [
+ "craft-xtask",
  "serde_json",
 ]
 
@@ -14500,7 +14431,6 @@ dependencies = [
  "artcraft-errors",
  "artcraft-test_data",
  "artcraft-test_utils",
- "file_to_base64_url",
  "futures",
  "log",
  "reqwest 0.12.28",
@@ -19150,6 +19080,7 @@ dependencies = [
 name = "gridcraft-xtask"
 version = "0.6.1"
 dependencies = [
+ "craft-xtask",
  "gridcraft-engine",
  "serde_json",
 ]
@@ -23281,6 +23212,7 @@ name = "lightcraft-xtask"
 version = "0.7.1"
 dependencies = [
  "brotli 8.0.4",
+ "craft-xtask",
  "flate2",
  "serde_json",
  "sha2 0.10.9",
@@ -28604,6 +28536,7 @@ dependencies = [
 name = "photocraft-xtask"
 version = "0.8.2"
 dependencies = [
+ "craft-xtask",
  "serde",
  "serde_json",
  "toml 1.1.8+spec-1.1.0",
@@ -29714,6 +29647,58 @@ name = "pxfm"
 version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
+
+[[package]]
+name = "pyo3"
+version = "0.29.3"
+source = "git+https://github.com/aphrody-labs/pyo3?rev=451d99fdcdcddf159e8e0a1186960b332cdb5d7c#451d99fdcdcddf159e8e0a1186960b332cdb5d7c"
+dependencies = [
+ "libc",
+ "once_cell",
+ "portable-atomic",
+ "pyo3-build-config",
+ "pyo3-ffi",
+ "pyo3-macros",
+]
+
+[[package]]
+name = "pyo3-build-config"
+version = "0.29.3"
+source = "git+https://github.com/aphrody-labs/pyo3?rev=451d99fdcdcddf159e8e0a1186960b332cdb5d7c#451d99fdcdcddf159e8e0a1186960b332cdb5d7c"
+dependencies = [
+ "target-lexicon 0.13.5",
+]
+
+[[package]]
+name = "pyo3-ffi"
+version = "0.29.3"
+source = "git+https://github.com/aphrody-labs/pyo3?rev=451d99fdcdcddf159e8e0a1186960b332cdb5d7c#451d99fdcdcddf159e8e0a1186960b332cdb5d7c"
+dependencies = [
+ "libc",
+ "pyo3-build-config",
+]
+
+[[package]]
+name = "pyo3-macros"
+version = "0.29.3"
+source = "git+https://github.com/aphrody-labs/pyo3?rev=451d99fdcdcddf159e8e0a1186960b332cdb5d7c#451d99fdcdcddf159e8e0a1186960b332cdb5d7c"
+dependencies = [
+ "proc-macro2",
+ "pyo3-macros-backend",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "pyo3-macros-backend"
+version = "0.29.3"
+source = "git+https://github.com/aphrody-labs/pyo3?rev=451d99fdcdcddf159e8e0a1186960b332cdb5d7c#451d99fdcdcddf159e8e0a1186960b332cdb5d7c"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
 
 [[package]]
 name = "qoi"
@@ -34102,9 +34087,11 @@ dependencies = [
 name = "soundcraft-video"
 version = "0.6.1"
 dependencies = [
+ "filmcraft-bitstream",
+ "filmcraft-h264",
+ "filmcraft-isobmff",
+ "filmcraft-prores",
  "image",
- "proptest",
- "rayon",
  "serde",
  "thiserror 2.0.21",
 ]
@@ -39970,6 +39957,7 @@ dependencies = [
 name = "vectorcraft-xtask"
 version = "0.10.0"
 dependencies = [
+ "craft-xtask",
  "serde_json",
 ]
 
@@ -43252,17 +43240,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "wordcraft-metafile"
-version = "0.6.1"
-dependencies = [
- "kurbo 0.13.1",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "wordcraft-pdf"
 version = "0.6.1"
 dependencies = [
+ "craft-metafile",
  "hayro-cmap",
  "hayro-interpret",
  "hayro-syntax",
@@ -43275,7 +43256,6 @@ dependencies = [
  "wordcraft-fonts",
  "wordcraft-geom",
  "wordcraft-layout",
- "wordcraft-metafile",
 ]
 
 [[package]]
@@ -43291,6 +43271,7 @@ dependencies = [
 name = "wordcraft-render"
 version = "0.6.1"
 dependencies = [
+ "craft-metafile",
  "image",
  "log",
  "vello_cpu 0.2.0",
@@ -43298,7 +43279,6 @@ dependencies = [
  "wordcraft-fonts",
  "wordcraft-geom",
  "wordcraft-layout",
- "wordcraft-metafile",
 ]
 
 [[package]]
@@ -43341,6 +43321,7 @@ dependencies = [
 name = "wordcraft-xtask"
 version = "0.6.1"
 dependencies = [
+ "craft-xtask",
  "serde_json",
 ]
 

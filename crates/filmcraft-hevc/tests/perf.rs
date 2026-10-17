@@ -20,13 +20,21 @@ fn bench(data: &[u8], threads: usize, iters: usize) -> (usize, f64) {
 
 fn run(name: &str, label: &str) {
     let f = common::fixture(name);
-    let Some((hevc, _)) = common::ensure(f) else { return };
+    let Some((hevc, _)) = common::ensure(f) else {
+        return;
+    };
     common::check_fixture(name).unwrap();
     let data = std::fs::read(hevc).unwrap();
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
     for threads in [1, cores.min(16)] {
         let (frames, secs) = bench(&data, threads, 3);
-        println!("{label} ({} KB): {threads} thread(s): {frames} frames in {secs:.3}s = {:.1} fps", data.len() / 1024, frames as f64 / secs);
+        println!(
+            "{label} ({} KB): {threads} thread(s): {frames} frames in {secs:.3}s = {:.1} fps",
+            data.len() / 1024,
+            frames as f64 / secs
+        );
     }
 }
 

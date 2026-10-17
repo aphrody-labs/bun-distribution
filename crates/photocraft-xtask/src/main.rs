@@ -12,8 +12,6 @@ mod perf;
 mod pinned;
 mod scorecard;
 mod sha256;
-mod stats;
-mod version;
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
@@ -57,12 +55,12 @@ fn main() -> ExitCode {
         Some("ci") => cmd_ci(),
         Some("corpus") => corpus::cmd(&rest),
         Some("test-corpus") => corpus::test_cmd(&rest),
-        Some("stats") => stats::run(&root(), rest.contains(&"--exact")),
+        Some("stats") => craft_xtask::stats::run(rest.contains(&"--exact")),
         Some("parity") => cmd_parity(),
         Some("i18n-coverage") => i18n_coverage::run(&root()),
         Some("perf") => perf::run(&root(), &rest),
         Some("scorecard") => scorecard::run(&root(), &rest),
-        Some("version") => version::run(&root(), &rest),
+        Some("version") => craft_xtask::version::run(&rest),
         Some("ico") => ico::run(&rest),
         Some("-h" | "--help" | "help") | None => {
             print!("{USAGE}");

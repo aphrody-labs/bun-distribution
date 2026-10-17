@@ -215,7 +215,7 @@ pub unsafe extern "C" fn aphrody_raster_fill_triangle(
                 return ZC_INVALID;
             };
             // SAFETY: `tex` is valid for `tex_w * tex_h * 4` bytes.
-            Some(crate::softraster::TextureView {
+            Some(aphrody_softraster::TextureView {
                 width: tex_w,
                 height: tex_h,
                 rgba: unsafe { slice::from_raw_parts(tex, tex_len) },
@@ -226,7 +226,7 @@ pub unsafe extern "C" fn aphrody_raster_fill_triangle(
         let (px, zbuf) = unsafe {
             (slice::from_raw_parts_mut(px, px_len), slice::from_raw_parts_mut(zbuf, pixels))
         };
-        crate::softraster::fill_triangle(
+        aphrody_softraster::fill_triangle(
             px,
             zbuf,
             width,

@@ -12,25 +12,23 @@
 //! Picture codecs: H.264 / AVC (Baseline, Main, High; progressive 8-bit 4:2:0; CAVLC and CABAC),
 //! Apple ProRes (422 Proxy/LT/Standard/HQ, 4444/XQ) and Motion JPEG (`jpeg`/`mjpa`).
 //!
-//! ## Origin
+//! ## Codecs
 //!
-//! The container, H.264 and ProRes code is a copy of the clean-room crates of our sibling app
-//! FilmCraft (`storytold/filmcraft`, same organisation, MIT OR Apache-2.0): `filmcraft-bitstream`
-//! → [`bitstream`], `filmcraft-isobmff` → [`isobmff`], `filmcraft-h264` → [`h264`] (without its
-//! test-only synthetic stream module), `filmcraft-prores` → [`prores`]. The crafting apps share no
-//! code as dependencies; each keeps its own copy. Only the module paths were changed; fixes found
-//! here should be offered back upstream. [`Movie`], the pixel conversion and the frame caches are
-//! SoundCraft's own.
+//! The container, H.264 and ProRes code comes from the shared clean-room crates, re-exported under
+//! their historical module paths: `filmcraft-bitstream` as [`bitstream`], `filmcraft-isobmff` as
+//! [`isobmff`], `filmcraft-h264` as [`h264`] and `filmcraft-prores` as [`prores`]. [`Movie`], the
+//! pixel conversion and the frame caches are SoundCraft's own.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 // Codec code indexes fixed-size blocks; index loops read more clearly than iterator chains there.
 #![allow(clippy::needless_range_loop, clippy::too_many_arguments)]
 
-pub mod bitstream;
+pub use filmcraft_bitstream as bitstream;
+pub use filmcraft_h264 as h264;
+pub use filmcraft_isobmff as isobmff;
+pub use filmcraft_prores as prores;
+
 pub mod convert;
-pub mod h264;
-pub mod isobmff;
 mod movie;
-pub mod prores;
 pub mod synth;
 
 pub use isobmff::ByteSource;

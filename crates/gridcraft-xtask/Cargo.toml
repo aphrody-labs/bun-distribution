@@ -22,5 +22,6 @@ default = ["engine"]
 engine = ["dep:gridcraft-engine"]
 
 [dependencies]
+craft-xtask = { path = "../craft-xtask" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 gridcraft-engine = { path = "../gridcraft-engine", optional = true }

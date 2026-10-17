@@ -19,7 +19,7 @@ wordcraft-geom = { path = "../wordcraft-geom" }
 wordcraft-doc = { path = "../wordcraft-doc" }
 wordcraft-fonts = { path = "../wordcraft-fonts" }
 wordcraft-layout = { path = "../wordcraft-layout" }
-wordcraft-metafile = { path = "../wordcraft-metafile" }
+craft-metafile = { path = "../craft-metafile" }
 vello_cpu = "0.2"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
 log = "0.4"

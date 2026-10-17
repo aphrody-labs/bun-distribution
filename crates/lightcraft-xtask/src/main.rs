@@ -8,8 +8,6 @@ mod bench;
 mod ico;
 mod layers;
 mod parity;
-mod stats;
-mod version;
 mod web;
 
 use std::path::{Path, PathBuf};
@@ -44,7 +42,7 @@ fn main() -> ExitCode {
     let rest: Vec<&str> = args.iter().skip(1).map(String::as_str).collect();
     let result = match args.first().map(String::as_str) {
         Some("ico") => ico::run(&rest),
-        Some("version") => version::run(&root(), &rest),
+        Some("version") => craft_xtask::version::run(&rest),
         Some("layers") => cmd_layers(),
         Some("assets") => assets::run(&root()),
         Some("bench") => bench::run(&root(), &rest),
@@ -53,7 +51,7 @@ fn main() -> ExitCode {
         Some("web") => web::run(&rest),
         Some("ci") => cmd_ci(),
         Some("corpus") => cmd_corpus(rest.contains(&"--download")),
-        Some("stats") => stats::run(&root(), rest.contains(&"--exact")),
+        Some("stats") => craft_xtask::stats::run(rest.contains(&"--exact")),
         Some("-h" | "--help" | "help") | None => {
             print!("{USAGE}");
             Ok(())

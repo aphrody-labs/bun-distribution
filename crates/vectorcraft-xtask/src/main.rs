@@ -10,8 +10,6 @@ mod bundle;
 mod ico;
 mod layers;
 mod sha256;
-mod stats;
-mod version;
 mod web_fonts;
 
 use std::path::{Path, PathBuf};
@@ -50,8 +48,8 @@ fn main() -> ExitCode {
         Some("corpus") => cmd_corpus(rest.contains(&"--download")),
         Some("bundle") => bundle::run(&root()),
         Some("ico") => ico::run(&rest),
-        Some("version") => version::run(&root(), &rest),
-        Some("stats") => stats::run(&root(), rest.contains(&"--exact")),
+        Some("version") => craft_xtask::version::run(&rest),
+        Some("stats") => craft_xtask::stats::run(rest.contains(&"--exact")),
         Some("web-fonts") => web_fonts::run(&root()),
         Some("-h" | "--help" | "help") | None => {
             print!("{USAGE}");

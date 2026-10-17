@@ -7,7 +7,7 @@ rust-version = "1.97"
 authors = ["aphrody-code"]
 repository = "https://github.com/aphrody-labs/aphrody"
 license = "Apache-2.0"
-description = "Dependency-free deterministic CPU triangle rasterizer (z-buffer, perspective-correct nearest texturing, alpha cutout): consumed by the nie renderer of the iecode repository (aphrody-ffi keeps its own copy)."
+description = "Dependency-free deterministic CPU triangle rasterizer (z-buffer, perspective-correct nearest texturing, alpha cutout): shared by the nie renderer and the aphrody-ffi zero-copy exports."
 
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

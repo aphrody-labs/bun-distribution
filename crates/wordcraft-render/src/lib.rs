@@ -14,7 +14,7 @@ use wordcraft_fonts::FontDb;
 use wordcraft_layout::Page;
 use wordcraft_layout::display::{DisplayOptions, Draw, Stroke, page_display};
 use wordcraft_layout::wordart::ArtPaint;
-use wordcraft_metafile::{Item, Picture, PlacedItem, Seg};
+use craft_metafile::{Item, Picture, PlacedItem, Seg};
 
 pub mod icon_lib;
 
@@ -204,10 +204,10 @@ pub fn image_size(bytes: &[u8]) -> Option<(u32, u32)> {
 /// extension it is stored under (`"wmf"` or `"emf"`), or None for anything else (#802). Very large
 /// frames are scaled down to 22 inches on the longer side, keeping the shape.
 pub fn metafile_size(bytes: &[u8]) -> Option<(f32, f32, &'static str)> {
-    if !wordcraft_metafile::is_metafile(bytes) {
+    if !craft_metafile::is_metafile(bytes) {
         return None;
     }
-    let pic = wordcraft_metafile::parse(bytes).ok()?;
+    let pic = craft_metafile::parse(bytes).ok()?;
     let (w, h) = (pic.width, pic.height);
     if !(w.is_finite() && h.is_finite() && w > 0.0 && h > 0.0) {
         return None;
@@ -234,8 +234,8 @@ impl Vector {
             .items
             .iter()
             .map(|it| match it {
-                Item::Path { segs, .. } => segs.len() * std::mem::size_of::<Seg>(),
-                Item::Bitmap { .. } => 0,
+                Item::Path { segs, .. } | Item::Pattern { segs, .. } => segs.len() * std::mem::size_of::<Seg>(),
+                Item::Bitmap { .. } | Item::Text(_) => 0,
             })
             .sum();
         px + segs
@@ -246,7 +246,7 @@ impl Vector {
 /// the caller falls back to the raster path (and the grey box).
 fn vector_for(doc: &Document, key: &str) -> Option<Arc<Vector>> {
     let bytes = doc.media.get(key)?;
-    if !wordcraft_metafile::is_metafile(bytes) {
+    if !craft_metafile::is_metafile(bytes) {
         return None;
     }
     if let Some(v) = lock(vectors()).get(key, bytes) {
@@ -263,7 +263,7 @@ fn vector_for(doc: &Document, key: &str) -> Option<Arc<Vector>> {
 
 /// Parses a metafile and decodes its bitmaps. None when the picture has no usable size.
 fn build_vector(bytes: &[u8]) -> Option<Vector> {
-    let mut pic = wordcraft_metafile::parse(bytes).ok()?;
+    let mut pic = craft_metafile::parse(bytes).ok()?;
     if !pic.has_size() {
         return None;
     }
@@ -314,6 +314,8 @@ fn draw_vector(ctx: &mut RenderContext, v: &Vector, r: &kurbo::Rect, crop: &[f32
                 ctx.fill_rect(&rect);
                 ctx.reset_paint_transform();
             }
+            // Pattern brushes and text strings are not drawn here.
+            PlacedItem::Pattern { .. } | PlacedItem::Text { .. } => {}
         }
     }
     ctx.set_fill_rule(peniko::Fill::NonZero);

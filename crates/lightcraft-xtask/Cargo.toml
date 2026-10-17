@@ -17,6 +17,7 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
+craft-xtask = { path = "../craft-xtask" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 sha2 = "0.10"
 flate2 = "1"

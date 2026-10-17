@@ -70,6 +70,8 @@ aphrody-command = { workspace = true }
 aphrody-proc = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-bun = { workspace = true }
+# CPU rasterizer behind the zero-copy aphrody_zc_* exports.
+aphrody-softraster = { workspace = true }
 aphrody-n2b-core = { workspace = true, optional = true }
 memchr = { workspace = true, optional = true }
 aphrody-oxc-bridge = { workspace = true, optional = true }

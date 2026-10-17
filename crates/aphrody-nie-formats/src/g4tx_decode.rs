@@ -182,6 +182,35 @@ pub fn decode_texture_rgba(g4tx_data: &[u8], tex: &G4txTexture) -> Option<(u32, 
     Some((w, h, rgba.data))
 }
 
+/// Décode le niveau 0 d'un fichier DDS autonome (magic `DDS ` en tête) en RGBA8 `(w, h, data)`.
+///
+/// Dimensions lues dans le `DDS_HEADER` (`dwHeight` @12, `dwWidth` @16) ; format et offset des
+/// pixels résolus par [`dds_format_and_pixel_offset`] (DX10, FourCC legacy, 32 bpp). Sert aux
+/// DDS hors conteneur G4TX (textures `#EMB` de DB Xenoverse 2 notamment).
+#[must_use]
+pub fn decode_dds_to_rgba(dds: &[u8]) -> Option<(u32, u32, Vec<u8>)> {
+    if u32::from_le_bytes(dds.get(..4)?.try_into().ok()?) != DDS_MAGIC {
+        return None;
+    }
+    let h = u32::from_le_bytes(dds.get(12..16)?.try_into().ok()?);
+    let w = u32::from_le_bytes(dds.get(16..20)?.try_into().ok()?);
+    if w == 0 || h == 0 {
+        return None;
+    }
+    let (image_format, pixel_offset) = dds_format_and_pixel_offset(dds)?;
+    let surface = Surface {
+        width: w,
+        height: h,
+        depth: 1,
+        layers: 1,
+        mipmaps: 1,
+        image_format,
+        data: dds.get(pixel_offset..)?,
+    };
+    let rgba = surface.decode_rgba8().ok()?;
+    Some((w, h, rgba.data))
+}
+
 /// Décode la texture principale **réelle** d'un G4TX en RGBA8 `(w, h, data)`.
 ///
 /// Parse le conteneur puis sélectionne la texture via [`crate::g4tx::select_main_texture`]

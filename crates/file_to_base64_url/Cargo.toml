@@ -4,10 +4,6 @@ edition = "2021"
 version = "0.0.1"
 publish = false
 
-[lib]
-name = "fal_client"
-path = "src/lib.rs"
-
 [dependencies]
 errors = { path = "../artcraft-errors", package = "artcraft-errors" }
 anyhow = "1.0.102"
