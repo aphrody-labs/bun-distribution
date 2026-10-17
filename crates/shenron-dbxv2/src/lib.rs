@@ -14,6 +14,12 @@
 //! | `shenron_dbxv2_cpk_extract(data, len, name, out)` | raw bytes of one entry |
 //! | `shenron_dbxv2_summarize(data, len, name, out)` | EMB/EMD/ESK/gameplay JSON |
 //! | `shenron_dbxv2_audio_to_wav(data, len, out)` | packed WAVs: `u32 count`, then `u32 len` + bytes each (LE) |
+//! | `shenron_dbxv2_cpk_find_file(cpk_path, query, out)` | index rows JSON `{cpk, path, offset, size, extract_size, compressed}`, read by ranges from the TOC; query `ext:emb`, a glob, an exact path or empty |
+//! | `shenron_dbxv2_cpk_read_file(cpk_path, entry, start, len, out)` | bytes of one entry (CRILAYLA decompressed); `len == 0` means all |
+//! | `shenron_dbxv2_emb_to_png(data, len, index, out)` | PNG of one EMB entry |
+//! | `shenron_dbxv2_model_json` / `shenron_dbxv2_model_glb` | assembled EMD (+EMB, ESK) as JSON / GLB |
+//! | `shenron_dbxv2_usm_to_video(data, len, out)` | MP4 (H.264) or WebM (VP9) bytes, sniffed by magic |
+//! | `shenron_dbxv2_font_to_sfnt(data, len, out)` | validated TTF/OTF/WOFF bytes |
 
 use std::{
     cell::RefCell,
@@ -229,4 +235,130 @@ pub unsafe extern "C" fn shenron_dbxv2_audio_to_wav(
         }
         Ok(packed)
     })
+}
+
+/// Index/find the entries of a CPK on disk by range reads of its table of contents.
+///
+/// # Safety
+/// `cpk_path` and `query` NUL-terminated (`query` may be null), `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_cpk_find_file(
+    cpk_path: *const c_char,
+    query: *const c_char,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let (path, query) = unsafe { (text(cpk_path), text(query)) };
+    run(out, || {
+        let rows = api::cpk_find_file(std::path::Path::new(path), query)
+            .map_err(|error| error.to_string())?;
+        json_bytes(&rows)
+    })
+}
+
+/// Read one entry of a CPK on disk (CRILAYLA decompressed); `len == 0` returns it whole.
+///
+/// # Safety
+/// `cpk_path` and `entry` NUL-terminated, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_cpk_read_file(
+    cpk_path: *const c_char,
+    entry: *const c_char,
+    start: u64,
+    len: u64,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let (path, entry) = unsafe { (text(cpk_path), text(entry)) };
+    run(out, || {
+        let range = (len > 0).then_some((start, len));
+        api::cpk_read_file(std::path::Path::new(path), entry, range).map_err(|error| error.to_string())
+    })
+}
+
+/// PNG of entry `index` of an in-memory `#EMB`.
+///
+/// # Safety
+/// `data` valid for `len` bytes, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_emb_to_png(
+    data: *const u8,
+    len: usize,
+    index: u32,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let bytes = unsafe { input(data, len) };
+    run(out, || api::emb_to_png(bytes, index as usize).map_err(|error| error.to_string()))
+}
+
+/// Assembled model JSON. `emb`/`esk` may be null with length 0.
+///
+/// # Safety
+/// Every pointer valid for its length (or null with length 0), `name` null or NUL-terminated.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_model_json(
+    name: *const c_char,
+    emd: *const u8,
+    emd_len: usize,
+    emb: *const u8,
+    emb_len: usize,
+    esk: *const u8,
+    esk_len: usize,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let (name, emd, emb, esk) =
+        unsafe { (text(name), input(emd, emd_len), input(emb, emb_len), input(esk, esk_len)) };
+    run(out, || {
+        let value = api::model_json(name, emd, (!emb.is_empty()).then_some(emb), (!esk.is_empty()).then_some(esk))
+            .map_err(|error| error.to_string())?;
+        json_bytes(&value)
+    })
+}
+
+/// Assembled model as binary glTF. Same arguments as [`shenron_dbxv2_model_json`].
+///
+/// # Safety
+/// Same contract as [`shenron_dbxv2_model_json`].
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_model_glb(
+    name: *const c_char,
+    emd: *const u8,
+    emd_len: usize,
+    emb: *const u8,
+    emb_len: usize,
+    esk: *const u8,
+    esk_len: usize,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let (name, emd, emb, esk) =
+        unsafe { (text(name), input(emd, emd_len), input(emb, emb_len), input(esk, esk_len)) };
+    run(out, || {
+        api::model_glb(name, emd, (!emb.is_empty()).then_some(emb), (!esk.is_empty()).then_some(esk))
+            .map_err(|error| error.to_string())
+    })
+}
+
+/// Remux a USM to MP4 (H.264) or WebM (VP9).
+///
+/// # Safety
+/// `data` valid for `len` bytes, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_usm_to_video(data: *const u8, len: usize, out: *mut ShBuf) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let bytes = unsafe { input(data, len) };
+    run(out, || api::usm_to_video(bytes).map(|(video, _)| video).map_err(|error| error.to_string()))
+}
+
+/// Validate and return a TTF/OTF/WOFF font.
+///
+/// # Safety
+/// `data` valid for `len` bytes, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_font_to_sfnt(data: *const u8, len: usize, out: *mut ShBuf) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let bytes = unsafe { input(data, len) };
+    run(out, || api::font_to_sfnt(bytes).map(|(font, _)| font).map_err(|error| error.to_string()))
 }

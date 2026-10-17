@@ -199,6 +199,295 @@ pub fn audio_to_wav(bytes: &[u8]) -> Result<Vec<Vec<u8>>> {
         .map_err(|details| ReError::ParseError { context: "audio", details })
 }
 
+// ---------------------------------------------------------------------------
+// On-demand CPK service: range-read index, find and read (never the whole archive).
+// ---------------------------------------------------------------------------
+
+use aphrody_nie_formats::FormatError;
+
+/// Stable index row of one CPK entry.
+#[derive(Debug, Clone, Serialize)]
+pub struct IndexEntry {
+    /// Archive label (file stem, e.g. `data2`).
+    pub cpk: String,
+    /// Virtual path `dir/file`.
+    pub path: String,
+    /// Absolute byte offset of the stored payload in the archive.
+    pub offset: u64,
+    /// Stored (possibly CRILAYLA-compressed) size.
+    pub size: u64,
+    pub extract_size: u64,
+    pub compressed: bool,
+}
+
+/// A CPK whose table of contents was read through a range reader.
+pub struct CpkIndex {
+    pub label: String,
+    reader: CpkReader,
+}
+
+fn entry_path(entry: &CpkEntry) -> String {
+    if entry.directory.is_empty() {
+        entry.filename.clone()
+    } else {
+        format!("{}/{}", entry.directory, entry.filename)
+    }
+}
+
+fn cpk_error(error: FormatError) -> ReError {
+    ReError::ParseError { context: "CPK", details: error.to_string() }
+}
+
+impl CpkIndex {
+    /// Read only the header and TOC through `read(offset, len)`; `file_name` feeds the key
+    /// derivation of encrypted archives.
+    pub fn open<F>(label: &str, file_name: &str, read: F) -> Result<Self>
+    where
+        F: FnMut(u64, usize) -> std::result::Result<Vec<u8>, FormatError>,
+    {
+        let reader = CpkReader::from_reader(file_name, read).map_err(cpk_error)?;
+        Ok(Self { label: label.to_owned(), reader })
+    }
+
+    fn row(&self, entry: &CpkEntry) -> IndexEntry {
+        IndexEntry {
+            cpk: self.label.clone(),
+            path: entry_path(entry),
+            offset: entry.offset,
+            size: entry.size,
+            extract_size: entry.extract_size,
+            compressed: entry.is_compressed,
+        }
+    }
+
+    /// Every entry, in TOC order.
+    pub fn list(&self) -> Vec<IndexEntry> {
+        self.reader.entries.iter().map(|entry| self.row(entry)).collect()
+    }
+
+    /// Entries matching `query`: `ext:emb` (extension), a pattern with `*`/`?` (glob over the full
+    /// path, case-insensitive) or an exact path.
+    pub fn find(&self, query: &str) -> Vec<IndexEntry> {
+        let matches: Box<dyn Fn(&str) -> bool> = if let Some(ext) = query.strip_prefix("ext:") {
+            let suffix = format!(".{}", ext.trim_start_matches('.').to_ascii_lowercase());
+            Box::new(move |path: &str| path.to_ascii_lowercase().ends_with(&suffix))
+        } else if query.contains(['*', '?']) {
+            let pattern = query.to_ascii_lowercase();
+            Box::new(move |path: &str| glob(pattern.as_bytes(), path.to_ascii_lowercase().as_bytes()))
+        } else {
+            let exact = query.to_ascii_lowercase();
+            Box::new(move |path: &str| path.to_ascii_lowercase() == exact)
+        };
+        self.reader
+            .entries
+            .iter()
+            .filter(|entry| matches(&entry_path(entry)))
+            .map(|entry| self.row(entry))
+            .collect()
+    }
+
+    /// Read one entry (CRILAYLA decompressed), optionally the `(start, len)` window of its
+    /// extracted bytes. Plain stored entries are range-read without touching the rest.
+    pub fn read<F>(&self, path: &str, range: Option<(u64, u64)>, mut read: F) -> Result<Vec<u8>>
+    where
+        F: FnMut(u64, usize) -> std::result::Result<Vec<u8>, FormatError>,
+    {
+        let entry = self.reader.find_file(path).ok_or_else(|| ReError::ParseError {
+            context: "CPK",
+            details: format!("{path}: not in the archive"),
+        })?;
+        if let (Some((start, len)), false, false) =
+            (range, entry.is_compressed, self.reader.is_encrypted)
+        {
+            let available = entry.size.saturating_sub(start);
+            let take = usize::try_from(len.min(available))
+                .map_err(|e| ReError::ParseError { context: "CPK", details: e.to_string() })?;
+            if take == 0 {
+                return Ok(Vec::new());
+            }
+            return read(entry.offset + start, take).map_err(cpk_error);
+        }
+        let bytes = self.reader.extract_from_reader(entry, read).map_err(cpk_error)?;
+        Ok(match range {
+            None => bytes,
+            Some((start, len)) => {
+                let from = usize::try_from(start).unwrap_or(usize::MAX).min(bytes.len());
+                let to =
+                    usize::try_from(start.saturating_add(len)).unwrap_or(usize::MAX).min(bytes.len());
+                bytes[from..to].to_vec()
+            },
+        })
+    }
+}
+
+/// Case-folded `*` / `?` glob over bytes.
+fn glob(pattern: &[u8], text: &[u8]) -> bool {
+    match pattern.split_first() {
+        None => text.is_empty(),
+        Some((b'*', rest)) => (0..=text.len()).any(|skip| glob(rest, &text[skip..])),
+        Some((b'?', rest)) => !text.is_empty() && glob(rest, &text[1..]),
+        Some((byte, rest)) => text.first() == Some(byte) && glob(rest, &text[1..]),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// One function per conversion (bytes in, bytes out).
+// ---------------------------------------------------------------------------
+
+/// Decode entry `index` of a `#EMB` container (DDS payload) to PNG.
+#[cfg(feature = "dbxv2")]
+pub fn emb_to_png(bytes: &[u8], index: usize) -> Result<Vec<u8>> {
+    use aphrody_nie_formats::g4tx_decode::{decode_dds_to_rgba, encode_rgba_to_png};
+    let archive = EmbArchive::parse(bytes)?;
+    let data = archive.entry_bytes(bytes, index)?;
+    let fail = |details: &str| ReError::ParseError { context: "emb_to_png", details: details.into() };
+    let (width, height, rgba) =
+        decode_dds_to_rgba(data).ok_or_else(|| fail("entry is not a decodable DDS"))?;
+    encode_rgba_to_png(&rgba, width as usize, height as usize)
+        .ok_or_else(|| fail("PNG encoding failed"))
+}
+
+fn assemble(
+    name: &str,
+    emd: &[u8],
+    emb: Option<&[u8]>,
+    esk: Option<&[u8]>,
+) -> Result<crate::game::formats::model_assemble::AssembledCharacterModel> {
+    use crate::game::formats::{emb::EmbFile, model_assemble::AssembledCharacterModel};
+    let emd = EmdFile::parse(emd)?;
+    let emb = emb.map(EmbFile::parse).transpose()?;
+    let esk = esk.map(EskFile::parse).transpose()?;
+    Ok(AssembledCharacterModel::assemble(name, &emd, emb.as_ref(), esk.as_ref(), None))
+}
+
+/// Assembled character model (EMD geometry, optional EMB textures and ESK skeleton) as JSON.
+/// `textures` lists the decoded rasters (`width`, `height`, `format`); pixels come from
+/// [`emb_to_png`] with the primitive's `textureIndex`.
+pub fn model_json(
+    name: &str,
+    emd: &[u8],
+    emb: Option<&[u8]>,
+    esk: Option<&[u8]>,
+) -> Result<Value> {
+    let model = assemble(name, emd, emb, esk)?;
+    let primitives: Vec<Value> = model
+        .primitives
+        .iter()
+        .map(|primitive| {
+            json!({
+                "name": primitive.name,
+                "materialName": primitive.material_name,
+                "positions": primitive.positions,
+                "normals": primitive.normals,
+                "uv": primitive.uv,
+                "indices": primitive.indices,
+                "textureIndex": primitive.texture_index,
+            })
+        })
+        .collect();
+    let textures: Vec<Value> = model
+        .textures
+        .iter()
+        .map(|t| json!({ "width": t.width, "height": t.height, "format": t.format }))
+        .collect();
+    Ok(json!({
+        "name": model.name,
+        "vertices": model.total_vertices(),
+        "triangles": model.total_triangles(),
+        "primitives": primitives,
+        "textures": textures,
+        "skeleton": model.skeleton.as_ref().map(serde_json::to_value).transpose()?,
+    }))
+}
+
+/// Same model as a binary glTF (`.glb`).
+pub fn model_glb(
+    name: &str,
+    emd: &[u8],
+    emb: Option<&[u8]>,
+    esk: Option<&[u8]>,
+) -> Result<Vec<u8>> {
+    assemble(name, emd, emb, esk)?.to_glb()
+}
+
+fn usm_error(error: FormatError) -> ReError {
+    ReError::ParseError { context: "usm", details: error.to_string() }
+}
+
+/// Remux a CRI USM to a browser-playable container: MP4 for H.264, WebM for VP9. Returns the
+/// bytes and the extension.
+pub fn usm_to_video(bytes: &[u8]) -> Result<(Vec<u8>, &'static str)> {
+    use aphrody_nie_formats::usm;
+    let usm = usm::demuxer(bytes).map_err(usm_error)?;
+    match usm.en_mp4() {
+        Ok((out, _)) => Ok((out, "mp4")),
+        Err(_) => usm.en_webm().map(|(out, _)| (out, "webm")).map_err(usm_error),
+    }
+}
+
+/// Fonts: TrueType/OpenType/WOFF payloads are validated and returned as-is. The game's own UI
+/// fonts are Scaleform Iggy bundles (`.iggy`/`.iggytex`), which no reader here decodes; they are
+/// refused explicitly instead of guessed.
+pub fn font_to_sfnt(bytes: &[u8]) -> Result<(Vec<u8>, &'static str)> {
+    let kind = match bytes.get(..4) {
+        Some([0, 1, 0, 0]) | Some(b"true") => "ttf",
+        Some(b"OTTO") => "otf",
+        Some(b"wOFF") => "woff",
+        Some(b"wOF2") => "woff2",
+        _ => {
+            return Err(ReError::ParseError {
+                context: "font",
+                details: "not an sfnt/WOFF font (Iggy bundles are not decoded)".into(),
+            });
+        },
+    };
+    Ok((bytes.to_vec(), kind))
+}
+
+// ---------------------------------------------------------------------------
+// File-backed CPK service (positioned reads; a 9 GB archive is never loaded).
+// ---------------------------------------------------------------------------
+
+#[cfg(feature = "dbxv2")]
+fn ranged(file: &mut std::fs::File) -> impl FnMut(u64, usize) -> std::result::Result<Vec<u8>, FormatError> + '_ {
+    use std::io::{Read, Seek, SeekFrom};
+    move |offset, size| {
+        let mut buffer = vec![0u8; size];
+        file.seek(SeekFrom::Start(offset))
+            .and_then(|_| file.read_exact(&mut buffer))
+            .map_err(|_| FormatError::TooShort { got: 0, need: size })?;
+        Ok(buffer)
+    }
+}
+
+/// Open the table of contents of a CPK on disk.
+#[cfg(feature = "dbxv2")]
+pub fn cpk_open(path: &std::path::Path) -> Result<CpkIndex> {
+    let mut file = std::fs::File::open(path)?;
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let label = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    CpkIndex::open(&label, &name, ranged(&mut file))
+}
+
+/// `find` over a CPK on disk; an empty query lists every entry.
+#[cfg(feature = "dbxv2")]
+pub fn cpk_find_file(path: &std::path::Path, query: &str) -> Result<Vec<IndexEntry>> {
+    let index = cpk_open(path)?;
+    Ok(if query.is_empty() { index.list() } else { index.find(query) })
+}
+
+/// `read` one entry of a CPK on disk, optionally a `(start, len)` window.
+#[cfg(feature = "dbxv2")]
+pub fn cpk_read_file(
+    path: &std::path::Path,
+    entry: &str,
+    range: Option<(u64, u64)>,
+) -> Result<Vec<u8>> {
+    let index = cpk_open(path)?;
+    let mut file = std::fs::File::open(path)?;
+    index.read(entry, range, ranged(&mut file))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -208,5 +497,12 @@ mod tests {
         assert_eq!(identify(b"#EMB....", "x.bin").format, "emb");
         assert_eq!(identify(b"????", "chara.BAC").format, "bac");
         assert_eq!(identify(b"????", "x.zzz").format, "unknown");
+    }
+
+    #[test]
+    fn glob_matches_case_folded_paths() {
+        assert!(glob(b"data/chara/*/*.emb", b"data/chara/gok/gok.emb"));
+        assert!(!glob(b"*.emd", b"a.emb"));
+        assert!(glob(b"a?c", b"abc"));
     }
 }
