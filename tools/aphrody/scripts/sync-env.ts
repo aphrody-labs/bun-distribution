@@ -5,6 +5,7 @@
 // existing non-empty values are kept unless --force. Values are never printed.
 //
 //   bun tools/aphrody/scripts/sync-env.ts [--check] [--force]
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -78,8 +79,17 @@ async function googleCookie(): Promise<string | undefined> {
 }
 
 async function gcloudToken(): Promise<string | undefined> {
-  if (!Bun.which("gcloud")) return;
-  const r = await Bun.$`gcloud auth print-access-token`.quiet().nothrow();
+  const bin =
+    Bun.which("gcloud") ??
+    [
+      "C:/Program Files (x86)/Google/Cloud SDK/google-cloud-sdk/bin/gcloud.cmd",
+      join(
+        process.env.LOCALAPPDATA ?? "",
+        "Google/Cloud SDK/google-cloud-sdk/bin/gcloud.cmd",
+      ),
+    ].find((p) => existsSync(p));
+  if (!bin) return;
+  const r = await Bun.$`${bin} auth print-access-token`.quiet().nothrow();
   return r.exitCode === 0 ? r.text().trim() || undefined : undefined;
 }
 
@@ -119,15 +129,16 @@ for (const t of targets) {
   const path = join(base, t.file);
   const current = await load(path);
   const wanted = new Set<string>([...(t.keys ?? []), ...current.keys()]);
-  for (const k of (await load(join(base, ".env.example"))).keys())
-    wanted.add(k);
+  const example = await load(join(base, ".env.example"));
+  for (const k of example.keys()) wanted.add(k);
 
   const next = new Map(current);
   const filled: string[] = [];
   const missing: string[] = [];
   for (const k of wanted) {
     const have = usable(current.get(k));
-    const from = store.get(k);
+    const from =
+      store.get(k) ?? (usable(example.get(k)) ? example.get(k) : undefined);
     if (have && !force) continue;
     if (from && from !== current.get(k)) {
       next.set(k, from);
