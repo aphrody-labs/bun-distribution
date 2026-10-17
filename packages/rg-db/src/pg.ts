@@ -1,4 +1,4 @@
-import { Client, Pool } from "pg";
+import { Client, Pool, types as pgTypes } from "pg";
 import { PostgresDialect } from "kysely";
 
 export type { PoolClient, QueryResultRow } from "pg";
@@ -63,6 +63,23 @@ let sharedPool: Pool | null = null;
 let inaglePool: Pool | null = null;
 
 /** Crée un pool PostgreSQL isolé pour les CLI/imports qui fournissent leur URL. */
+const INT8_OID = 20;
+
+/**
+ * Parseurs de types : `bigint` (int8) arrive en chaîne par défaut. Les valeurs dans la plage
+ * entière sûre deviennent des nombres (COUNT(*), tailles, offsets) ; les autres restent des
+ * chaînes pour ne pas perdre de précision.
+ */
+const typeParsers = {
+  getTypeParser(oid: number, format?: "text" | "binary") {
+    if (oid !== INT8_OID) return pgTypes.getTypeParser(oid, format as "text");
+    return (value: string) => {
+      const parsed = Number(value);
+      return Number.isSafeInteger(parsed) ? parsed : value;
+    };
+  },
+};
+
 export function createPgPool(connectionString = getDatabaseURL(), options: PgPoolOptions = {}): Pool {
   const configuredMax = Number.parseInt(process.env.DATABASE_POOL_MAX ?? "", 10);
   const max = options.max ?? (configuredMax > 0 ? Math.min(configuredMax, 4) : 4);
@@ -75,6 +92,7 @@ export function createPgPool(connectionString = getDatabaseURL(), options: PgPoo
     max,
     options: options.searchPath ? `-c search_path=${options.searchPath}` : undefined,
     ssl: options.ssl,
+    types: typeParsers,
   });
   pool.on("error", error => console.error("[pg] Erreur inattendue sur le pool partagé :", error));
   return pool;
