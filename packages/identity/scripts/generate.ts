@@ -2,7 +2,7 @@
 // Regenerates the pet modules from the canonical package of crates/aphrody-identity:
 //   src/animations.generated.ts  from assets/aphrody/animations.json (geometry and timing for
 //                                the React component; the 100 KB QA manifest never reaches a bundle)
-// Web tracks are imported directly from @aphrody/web-source's canonical web.json.
+// Web tracks are imported directly from crates/aphrody-identity/assets/aphrody/web.json.
 // This generator writes only its own package; Rust exports remain with their owner.
 // src/pet.test.ts and src/runtime.test.ts fail when a generated file and the crate disagree.
 //   bun scripts/generate.ts

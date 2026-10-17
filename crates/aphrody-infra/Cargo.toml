@@ -18,7 +18,7 @@ path = "src/main.rs"
 [dependencies]
 aphrody-proc = { path = "../aphrody-proc", features = [] }
 anyhow = "1.0.104"
-aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/git" }
+aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
 aphrody-ssh = { path = "../aphrody-ssh", features = [] }
 aphrody-ovh = { path = "../aphrody-ovh" }
 aphrody-vpn = { path = "../aphrody-vpn", features = [] }

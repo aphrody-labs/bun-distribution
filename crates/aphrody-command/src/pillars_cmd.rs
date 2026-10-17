@@ -30,7 +30,7 @@ pub(crate) enum NativeAction {
 pub(crate) fn handle_native(action: NativeAction) -> miette::Result<()> {
     match action {
         NativeAction::Status { json } => {
-            let platform_status = aphrody_native::native::NativePlatform::status();
+            let platform_status = aphrody_native::NativePlatform::status();
             let status = platform_status["status"].clone();
 
             let summary = serde_json::json!({
@@ -54,9 +54,9 @@ pub(crate) fn handle_native(action: NativeAction) -> miette::Result<()> {
             }
         },
         NativeAction::SelfTest => {
-            let clock_before = aphrody_native::native::NativePlatform::time_monotonic_ns();
-            let topology = aphrody_native::native::NativePlatform::get_topology();
-            let clock_after = aphrody_native::native::NativePlatform::time_monotonic_ns();
+            let clock_before = aphrody_native::NativePlatform::time_monotonic_ns();
+            let topology = aphrody_native::NativePlatform::get_topology();
+            let clock_after = aphrody_native::NativePlatform::time_monotonic_ns();
             if clock_after < clock_before {
                 return Err(miette!("native monotonic clock moved backwards"));
             }
@@ -186,7 +186,8 @@ mod os_status_tests {
     }
 }
 
-aphrody_web_source::module!("crates/infra/aphrody-command/src/pillars_cmd/web.rs", pub(crate) mod web);
+#[path = "pillars_cmd/web.rs"]
+pub(crate) mod web;
 pub(crate) use web::{WebAction, handle_web};
 
 // --- 4. INFRA PILLAR: `aphrody infra` is the aphrody-infra control plane (multicall.rs) ---

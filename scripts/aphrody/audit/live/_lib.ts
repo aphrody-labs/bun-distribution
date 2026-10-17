@@ -21,7 +21,7 @@ import {
   collectPageDiagnostics,
   TestPage,
   type PageDiagnostics,
-} from "@aphrody/web-test";
+} from "@aphrody/bun-web/testing";
 
 export { TestPage };
 

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-shell-session"
+description = "Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine."
+version = "1.4.4"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+[lints]
+workspace = true
+
+[dependencies]

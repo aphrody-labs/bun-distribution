@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-site"
+description = "Native product website and catalog APIs, isolated from the Bun WebOS runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+aphrody-google.workspace = true
+aphrody-m3-tokens.workspace = true
+axum.workspace = true
+clap = { workspace = true, features = ["derive", "env"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+sha2.workspace = true
+hex.workspace = true
+tokio.workspace = true
+tower-http = { workspace = true, features = ["fs"] }
+toml = { workspace = true, features = ["preserve_order"] }
+url.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tower.workspace = true
+
+[lints]
+workspace = true

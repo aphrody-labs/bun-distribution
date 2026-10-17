@@ -42,7 +42,8 @@ mod search_text;
 #[cfg(not(target_arch = "wasm32"))]
 mod shell;
 #[cfg(not(target_arch = "wasm32"))]
-aphrody_web_source::module!("crates/ai/agent-tools/src/web_tools.rs", mod web_tools);
+#[path = "web_tools.rs"]
+mod web_tools;
 #[cfg(not(target_arch = "wasm32"))]
 mod winclean;
 

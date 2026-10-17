@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-labs/bun",
+  "package": "aphrody-boq",
+  "version": "1.4.4",
+  "license": "Apache-2.0",
+  "sourceRepository": "https://github.com/aphrody-labs/aphrody",
+  "sourceCommit": "4b83ea7f6c2727d67c30d4942501e5b831e559dd",
+  "sourceRoot": "crates/google/boq",
+  "files": [
+    {
+      "sourcePath": "crates/google/boq/src/lib.rs",
+      "destinationPath": "src/lib.rs",
+      "sourceGitBlob": "0b949937383695737715dbe5cf636ffa3207aa5a",
+      "sha256": "de9aa2a293ee8d429f93ef7405a1014147f3e45eb2509a15dc8b97835ed73713",
+      "bytes": 7072,
+      "transformation": "none"
+    },
+    {
+      "sourcePath": "crates/google/boq/Cargo.toml",
+      "destinationPath": "Cargo.toml",
+      "sourceGitBlob": "f10389d726ad5b30c33fed2035c6965e349b178d",
+      "sourceSha256": "39107716ffecb0e7c89a7f9ee09010b8dff6aade3426d679f3c06c06555c85fd",
+      "transformation": "Resolve inherited package fields and lint levels from source root Cargo.toml; change repository to the new owner; pin serde_json to the source Cargo.lock version; declare an independent workspace."
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "serde_json",
+      "version": "1.0.151",
+      "registryChecksum": "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14",
+      "source": "Cargo.lock at sourceCommit",
+      "features": "default"
+    }
+  ],
+  "qualification": {
+    "sourceBytesVerified": true,
+    "preservedUnitTests": 7,
+    "rustGates": "Native Windows serialized cargo test and strict all-target Clippy pass with --locked --offline on 2026-10-11; 7 tests pass, 0 failures. No engine or Google service qualification inferred."
+  }
+}

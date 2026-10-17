@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "name": "aphrody-google-stack",
+  "authority": "aphrody-google",
+  "sourceRepositories": {
+    "ai": ".",
+    "web": ".",
+    "infra": "."
+  },
+  "artifacts": {
+    "rust": "aphrody-google",
+    "rustCrates": [
+      "aphrody-google",
+      "aphrody-gemini-runtime",
+      "aphrody-gemini-web",
+      "aphrody-antigravity",
+      "aphrody-model-antigravity",
+      "aphrody-notebooklm",
+      "aphrody-google-mcp",
+      "aphrody-gcs"
+    ],
+    "bun": "@aphrody/google",
+    "pythonSdk": "google-antigravity",
+    "python": "aphrody.google",
+    "kernel": "aphrody-mcp"
+  },
+  "runtime": {
+    "project": "GOOGLE_CLOUD_PROJECT",
+    "location": "GOOGLE_CLOUD_LOCATION",
+    "auth": "ADC-or-secret-manager",
+    "home": "APHRODY_HOME"
+  },
+  "install": {
+    "binDirectory": "${APHRODY_HOME}/bin",
+    "atomic": true,
+    "keepPrevious": 2,
+    "secretsIncluded": false
+  },
+  "update": {
+    "source": "origin/main",
+    "strategy": "fetch-verify-build-install",
+    "rollback": "previous-version"
+  },
+  "domain": {
+    "rust": "crates/google",
+    "bun": "packages/google",
+    "python": "py"
+  },
+  "pythonSdkSource": {
+    "repository": "https://github.com/aphrody-labs/antigravity-sdk-python",
+    "rev": "02fa7fa362d815f788074ae09998041b34f9a770",
+    "consumer": "py/pyproject.toml"
+  }
+}

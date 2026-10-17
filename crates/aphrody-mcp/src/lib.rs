@@ -8,18 +8,23 @@ mod a2a_auth;
 mod client_cmd;
 mod environment;
 #[cfg(not(target_arch = "wasm32"))]
-aphrody_web_source::module!("crates/ai/mcp/src/gemini_tools.rs", mod gemini_tools);
+#[path = "gemini_tools.rs"]
+mod gemini_tools;
 mod http_rest;
 #[cfg(not(target_arch = "wasm32"))]
 mod kernel_tools;
-aphrody_web_source::module!("crates/ai/mcp/src/native_crawl_tools.rs", mod native_crawl_tools);
+#[path = "native_crawl_tools.rs"]
+mod native_crawl_tools;
 #[cfg(not(target_arch = "wasm32"))]
 mod site_tools;
-aphrody_web_source::module!("crates/ai/mcp/src/public_web_tools.rs", mod public_web_tools);
+#[path = "public_web_tools.rs"]
+mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
-aphrody_web_source::module!("crates/ai/mcp/src/search_tools.rs", mod search_tools);
+#[path = "search_tools.rs"]
+mod search_tools;
 #[cfg(not(target_arch = "wasm32"))]
-aphrody_web_source::module!("crates/ai/mcp/src/shenron_gemini_web.rs", mod shenron_gemini_web);
+#[path = "shenron_gemini_web.rs"]
+mod shenron_gemini_web;
 #[cfg(not(target_arch = "wasm32"))]
 mod shenron_llm_backend;
 mod shenron_vector;
@@ -55,7 +60,8 @@ mod stt_local_tools;
 #[cfg(all(feature = "vision", not(target_arch = "wasm32")))]
 mod vision_tools;
 // Aphrody Web catalog, merged into this server's tools/list (no second MCP server).
-aphrody_web_source::module!("crates/ai/mcp/src/bxc_tools.rs", mod bxc_tools);
+#[path = "bxc_tools.rs"]
+mod bxc_tools;
 // Tauri desktop UI tools are supplied by aphrody-ui through the kernel plugin subsystem.
 #[cfg(not(target_arch = "wasm32"))]
 mod tauri_tools;
@@ -72,7 +78,8 @@ mod sync_tools;
 mod remote_tools;
 // Browser automation served natively through the system-layer browser crates.
 #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
-aphrody_web_source::module!("crates/ai/mcp/src/browser_tools.rs", mod browser_tools);
+#[path = "browser_tools.rs"]
+mod browser_tools;
 // WinClean catalog (Windows computer use and OS control).
 #[cfg(all(feature = "winclean", windows))]
 mod winclean_tools;

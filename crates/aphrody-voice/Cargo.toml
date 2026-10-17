@@ -30,7 +30,6 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
 async-trait = "0.1.92"
 futures = "0.3.34"
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }

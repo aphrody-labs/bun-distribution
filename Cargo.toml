@@ -1,7 +1,20 @@
 [workspace]
-exclude = ["vendor/uutils", "apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika"]
+exclude = ["vendor/uutils", "packages/bun-tauri", "apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika"]
 resolver = "3"
 members = [
+  "crates/aphrody-google",
+  "crates/aphrody-gemini-web",
+  "crates/aphrody-gemini-runtime",
+  "crates/aphrody-antigravity",
+  "crates/aphrody-model-antigravity",
+  "crates/aphrody-boq",
+  "packages/bun-windows-winclean",
+  "crates/aphrody-site",
+  "crates/aphrody-webos-wasm",
+  "crates/aphrody-shell-session",
+  "crates/aphrody-shell-vfs",
+  "crates/aphrody-terminal-core",
+  "crates/aphrody-shell-web",
   "crates/android-native",
   "crates/bunos-utils",
   "crates/aphrody-svg",
@@ -654,7 +667,7 @@ aphrody-models = { path = "crates/aphrody-models", version = "1.4.4", features =
 aphrody-rag-core = { path = "crates/aphrody-rag-core", version = "1.4.4", features = [] }
 rookie-cookies = { version = "0.6.0" }
 yolo-runtime = { path = "crates/yolo-runtime", version = "1.4.4" }
-bun-python-host = { git = "https://github.com/aphrody-labs/bun", rev = "84a5f33140cef2a63088d8484e84c0a2e5aba785", version = "0.1.0" }
+bun-python-host = { path = "toolchains/bun/packages/bun-python-native/crates/bun-python-host" }
 mimalloc = { version = "0.1", default-features = false, features = [] }
 aphrody-backend = { path = "crates/aphrody-backend", version = "1.4.4", features = [] }
 libm = { version = "0.2.16" }
@@ -671,12 +684,33 @@ soundcraft-engine = { path = "crates/soundcraft-engine" }
 soundcraft-ui-egui = { path = "crates/soundcraft-ui-egui" }
 soundcraft-playback = { path = "crates/soundcraft-playback" }
 soundcraft-model = { path = "crates/soundcraft-model" }
-aphrody-web-extract = { path = "toolchains/bun/packages/web/rust/crates/web-extract" }
-aphrody-web-index = { path = "toolchains/bun/packages/web/rust/crates/web-index" }
-aphrody-gemini-web = { path = "toolchains/bun/packages/bun-google/aphrody/crates/gemini-web" }
-aphrody-x = { path = "toolchains/bun/packages/web/rust/crates/x" }
-obscura-dom = { path = "toolchains/bun/packages/web/rust/crates/obscura-dom" }
-obscura-net = { path = "toolchains/bun/packages/web/rust/crates/obscura-net" }
+aphrody-web-extract = { package = "bun_browser_extract", path = "toolchains/bun/src/browser/crates/extract" }
+aphrody-web-index = { package = "bun_browser_index", path = "toolchains/bun/src/browser/crates/index" }
+aphrody-gemini-web = { path = "crates/aphrody-gemini-web" }
+aphrody-site = { path = "crates/aphrody-site" }
+aphrody-webos-wasm = { path = "crates/aphrody-webos-wasm" }
+aphrody-shell-session = { path = "crates/aphrody-shell-session" }
+aphrody-shell-vfs = { path = "crates/aphrody-shell-vfs" }
+aphrody-terminal-core = { path = "crates/aphrody-terminal-core" }
+aphrody-shell-web = { path = "crates/aphrody-shell-web" }
+aphrody-google = { path = "crates/aphrody-google" }
+rio-vt = { path = "toolchains/bun/src/rio/rio-vt", default-features = false }
+tower = { version = "0.5.3", features = ["util"] }
+tower-http = { version = "0.7.1", features = ["cors"] }
+aphrody-gemini-runtime = { path = "crates/aphrody-gemini-runtime" }
+aphrody-antigravity = { path = "crates/aphrody-antigravity" }
+aphrody-model-antigravity = { path = "crates/aphrody-model-antigravity" }
+aphrody-boq = { path = "crates/aphrody-boq" }
+data-encoding = { version = "2.11.1" }
+prost = { version = "0.14.4" }
+tonic = { version = "0.14.6" }
+tonic-prost = { version = "0.14.6" }
+tonic-prost-build = { version = "0.14.6" }
+protoc-bin-vendored = { version = "3.2.0" }
+aphrody-mcp-client = { path = "crates/aphrody-mcp-client" }
+aphrody-x = { package = "bun_x", path = "toolchains/bun/src/x" }
+obscura-dom = { package = "bun_browser_dom", path = "toolchains/bun/src/browser/crates/dom" }
+obscura-net = { package = "bun_browser_net", path = "toolchains/bun/src/browser/crates/net" }
 craft-fonts = { path = "crates/craft-fonts", version = "1.4.4" }
 craft-fonts-tests = { path = "crates/craft-fonts-tests", version = "1.4.4" }
 craft-atomic = { path = "crates/craft-atomic", version = "1.4.4" }
@@ -1239,9 +1273,9 @@ input_common = { path = "crates/ruzu-input-common" }
 video_core = { path = "crates/ruzu-video-core" }
 frontend_common = { path = "crates/ruzu-frontend-common" }
 shader_recompiler = { path = "crates/ruzu-shader-recompiler" }
-tauri = { package = "aphrody-tauri", path = "toolchains/bun/packages/bun-tauri/crates/aphrody-tauri", version = "1.4.4", default-features = false }
-tauri-build = { package = "aphrody-tauri-build", path = "toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.4" }
-tauri-plugin = { package = "aphrody-tauri-plugin", path = "toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.4" }
+tauri = { package = "aphrody-tauri", path = "packages/bun-tauri/crates/aphrody-tauri", version = "1.4.4", default-features = false }
+tauri-build = { package = "aphrody-tauri-build", path = "packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.4" }
+tauri-plugin = { package = "aphrody-tauri-plugin", path = "packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.4" }
 aphrody-render = { path = "crates/aphrody-render" }
 aphrody-m3-tokens = { path = "crates/aphrody-m3-tokens" }
 cubeb = "0.34"

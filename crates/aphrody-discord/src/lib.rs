@@ -15,7 +15,8 @@ pub mod crypto;
 pub mod rest;
 pub mod shell;
 pub mod types;
-aphrody_web_source::module!("crates/infra/discord/src/web.rs", pub mod web);
+#[path = "web.rs"]
+pub mod web;
 
 pub use ai::{AiResponseMetadata, SourceCitation, build_ai_embed, format_code_graph_discord};
 pub use bot::{AphrodyDiscordBot, BotConfig, BotStatus};

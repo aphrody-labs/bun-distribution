@@ -52,10 +52,9 @@ in-process = [
 custom-protocol = ["tauri/custom-protocol"]
 
 [build-dependencies]
-tauri-build = { package = "aphrody-tauri-build", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-build" }
+tauri-build = { package = "aphrody-tauri-build", path = "../../packages/bun-tauri/crates/aphrody-tauri-build" }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
 aphrody-proc = { path = "../../crates/aphrody-proc", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 aphrody-app-server = { path = "../../crates/aphrody-app-server", features = [] }
@@ -70,7 +69,7 @@ aphrody-llama-server = { path = "../../crates/aphrody-llama-server", features = 
 aphrody-models = { path = "../../crates/aphrody-models", features = [] }
 futures-util = { version = "0.3", features = [] }
 thiserror = "2.0.20"
-aphrody-native = { package = "bun_host", path = "../../toolchains/bun/src/host" }
+aphrody-native = { package = "bun_native", path = "../../toolchains/bun/src/bun-os/native" }
 aphrody-sprite-sheet = { path = "../../crates/aphrody-sprite-sheet" }
 aphrody-subsystem = { path = "../../crates/aphrody-subsystem" }
 async-trait = "0.1.92"
@@ -81,8 +80,8 @@ rustls = { version = "0.23", default-features = false, features = [
   "std",
   "tls12",
 ] }
-tauri = { package = "aphrody-tauri", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri", default-features = false, features = ["compression", "dynamic-acl", "image-ico", "tray-icon"] }
-tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-runtime-cef" }
+tauri = { package = "aphrody-tauri", path = "../../packages/bun-tauri/crates/aphrody-tauri", default-features = false, features = ["compression", "dynamic-acl", "image-ico", "tray-icon"] }
+tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", path = "../../packages/bun-tauri/crates/aphrody-tauri-runtime-cef" }
 tokio = { version = "1.53.1", features = [
   "process",
   "rt-multi-thread",
@@ -99,7 +98,7 @@ serde_json = "1.0.151"
 log = "0.4.34"
 mimalloc = { version = "0.1", default-features = false, features = [] }
 url = { version = "2.5.8", features = ["serde"] }
-tauri-plugin-aphrody = { path = "../../toolchains/bun/packages/bun-tauri/crates/tauri-plugin-aphrody", default-features = false, features = ["autostart", "clipboard-manager", "deep-link", "dialog", "fs", "global-shortcut", "log", "notification", "opener", "os", "process", "single-instance-deep-link", "store", "updater", "updater-rustls-tls", "window-state", "wrap"] }
+tauri-plugin-aphrody = { path = "../../packages/bun-tauri/crates/tauri-plugin-aphrody", default-features = false, features = ["autostart", "clipboard-manager", "deep-link", "dialog", "fs", "global-shortcut", "log", "notification", "opener", "os", "process", "single-instance-deep-link", "store", "updater", "updater-rustls-tls", "window-state", "wrap"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"

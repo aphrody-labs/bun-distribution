@@ -1,12 +1,47 @@
-# SPDX-License-Identifier: Apache-2.0
-# Source owner: @aphrody/web-source in the Bun fork; retain the consumer namespace.
-from pathlib import Path as _SourcePath
-from os import environ as _source_environ
+"""uv/Python launcher for the single Rust ``aphrody-google`` authority."""
 
-_source_repo = next(
-    parent for parent in _SourcePath(__file__).resolve().parents
-    if (parent / "Cargo.toml").is_file() and (parent / "PLAN.md").is_file()
-)
-_source_bun = _SourcePath(_source_environ.get("APHRODY_BUN_CHECKOUT", str(_source_repo.parent / "bun")))
-_source_provider = _source_bun / "packages/web/rust/integrations/py/packages/cli/src/aphrody_cli/google.py"
-exec(compile(_source_provider.read_bytes(), str(_source_provider), "exec"), globals())
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+from aphrody import _paths
+
+
+def _resolve_binary() -> str | None:
+    """Resolve the native Google authority without requiring a reloaded PATH."""
+    configured = os.environ.get("APHRODY_GOOGLE_BIN")
+    if configured:
+        candidate = Path(configured).expanduser()
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+        return None
+
+    on_path = shutil.which("aphrody-google") or shutil.which("google")
+    if on_path:
+        return on_path
+
+    home = _paths.state_dir() / "bin"
+    for name in (
+        "aphrody-google",
+        "google",
+    ):
+        candidate = home / name
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+
+def main() -> int:
+    """Forward the command line to the native aphrody Google binary."""
+    binary = _resolve_binary()
+    if not binary:
+        print(
+            "aphrody-google binary not found; install the Rust binary first",
+            file=sys.stderr,
+        )
+        return 127
+    return subprocess.call([binary, *sys.argv[1:]])

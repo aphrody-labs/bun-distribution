@@ -64,7 +64,7 @@ export async function main(args: string[]): Promise<number> {
   }
   if (action === "os") {
     const { startForkWebOS } =
-      await import("@aphrody/web-source/integrations/m3/packages/app-ui/webos.ts");
+      await import("@aphrody/app-ui/webos");
     const server = await startForkWebOS();
     console.log(`Aphrody WebOS: ${server.url}`);
     return 0;

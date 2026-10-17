@@ -10,7 +10,7 @@
  * 3. links   — internal links found in crawled pages but not crawled are fetched (broken links).
  * 4. assets  — every img/script/style/font/og:image referenced by crawled pages is fetched;
  *              first-party failures are errors, third-party failures are warnings.
- * 5. pages   — @aphrody/web-test TestPage loads the key pages of each site and
+ * 5. pages   — @aphrody/bun-web/testing TestPage loads the key pages of each site and
  *              asserts a title, the expected text and no error marker.
  * 6. server  — with --ssh, the journal of each site's server units during the run must hold
  *              no error line (Next `⨯`, EROFS, missing column, …).
@@ -237,7 +237,7 @@ for (const site of sites) {
   });
 
   // 5. key pages through the monorepo's native Web test owner.
-  const { TestPage } = await import("@aphrody/web-test");
+  const { TestPage } = await import("@aphrody/bun-web/testing");
   for (const spec of site.pages) {
     let page: Awaited<ReturnType<typeof TestPage.create>> | undefined;
     try {

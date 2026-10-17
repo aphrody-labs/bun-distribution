@@ -89,7 +89,6 @@ yara = ["aphrody-re/yara"]
 #   buildable from the same crate.
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 clap_complete = { version = "4", features = [] }
 miette = { version = "7", features = ["fancy"] }
@@ -104,34 +103,34 @@ bytes = "1.12.1"
 ignored = ["ort"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-pkg-cli = { package = "bun_pkg_cli", path = "../../toolchains/bun/src/pkg/cli" }
-aphrody-site = { path = "../../toolchains/bun/packages/web/rust/crates/site" }
+aphrody-pkg-cli = { package = "bun_pkg_cli", path = "../../toolchains/bun/src/bun-os/pkg/cli" }
+aphrody-site = { path = "../aphrody-site" }
 toml_edit = { version = "0.25.15", features = [] }
 tempfile = { version = "3.27.0" }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
-aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/git" }
+aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
 aphrody-ssh = { path = "../aphrody-ssh", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }
 regex = { version = "1.11", features = [] }
 which = { version = "8", features = [] }
 colored = { version = "3", features = [] }
 mimalloc = { version = "0.1", default-features = false, features = [] }
-aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", features = ["render"] }
-aphrody-web-crawl = { path = "../../toolchains/bun/packages/web/rust/crates/web-crawl", features = [] }
+aphrody-web-service = { path = "../../toolchains/bun/src/browser/crates/service", package = "bun_browser_service", features = ["render"] }
+aphrody-web-crawl = { path = "../../toolchains/bun/src/browser/crates/crawl", package = "bun_browser_crawl", features = [] }
 aphrody-web-detect = { path = "../../toolchains/bun/src/browser/crates/detect", package = "bun_browser_detect", features = ["fetch"] }
-aphrody-web-extract = { path = "../../toolchains/bun/packages/web/rust/crates/web-extract", features = [] }
-aphrody-web-frames = { path = "../../toolchains/bun/packages/web/rust/crates/web-frames", features = [] }
-aphrody-x = { path = "../../toolchains/bun/packages/web/rust/crates/x", features = [] }
-obscura = { path = "../../toolchains/bun/packages/web/rust/crates/obscura", package = "aphrody-obscura" }
-obscura-dom = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-dom", features = [] }
-obscura-browser = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-browser", features = [] }
-obscura-net = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-net", features = [] }
+aphrody-web-extract = { path = "../../toolchains/bun/src/browser/crates/extract", package = "bun_browser_extract", features = [] }
+aphrody-web-frames = { path = "../../toolchains/bun/src/browser/crates/frames", package = "bun_browser_frames", features = [] }
+aphrody-x = { path = "../../toolchains/bun/src/x", package = "bun_x", features = [] }
+obscura = { path = "../../toolchains/bun/src/browser/crates/api", package = "bun_browser" }
+obscura-dom = { path = "../../toolchains/bun/src/browser/crates/dom", package = "bun_browser_dom", features = [] }
+obscura-browser = { path = "../../toolchains/bun/src/browser/crates/browser", package = "bun_browser_browser", features = [] }
+obscura-net = { path = "../../toolchains/bun/src/browser/crates/net", package = "bun_browser_net", features = [] }
 aphrody-n2b = { version = "0.7.0", features = [] }
 aphrody-translate = { path = "../aphrody-translate", features = [] }
 aphrody-backend = { path = "../aphrody-backend", features = [] }
 aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring","std","tls12"] }
-aphrody-native = { package = "bun_host", path = "../../toolchains/bun/src/host" }
+aphrody-native = { package = "bun_native", path = "../../toolchains/bun/src/bun-os/native" }
 aphrody-discord = { path = "../aphrody-discord", features = [] }
 aphrody-terminal-backend = { path = "../aphrody-terminal-backend", features = [] }
 aphrody-term = { path = "../aphrody-term", features = [] }
@@ -140,25 +139,25 @@ aphrody-a2a-client = { path = "../aphrody-a2a-client", default-features = false,
 aphrody-a2a-coord = { path = "../aphrody-a2a-coord", features = [] }
 futures = { version = "0.3.34" }
 thiserror = { version = "2.0.20" }
-aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", features = [] }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../packages/bun-windows-winclean", features = [] }
 aphrody-kernel = { path = "../aphrody-kernel", default-features = false, features = ["builtins"] }
 aphrody-infra = { path = "../aphrody-infra" }
 aphrody-yolo = { path = "../aphrody-yolo" }
 aphrody-mcp = { path = "../aphrody-mcp" }
-aphrody-web-engine = { path = "../../toolchains/bun/packages/web/rust/crates/web-engine", features = [] }
+aphrody-web-engine = { path = "../../toolchains/bun/src/browser/crates/engine", package = "bun_browser_engine", features = [] }
 aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", features = ["cli"] }
 aphrody-render = { path = "../aphrody-render" }
 aphrody-bindgen = { path = "../aphrody-bindgen" }
 aphrody-rag-eval = { path = "../aphrody-rag-eval", features = [] }
-tauri-cli = { path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-cli", package = "aphrody-tauri-cli" }
-create-tauri-app = { path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-create-tauri-app", package = "aphrody-create-tauri-app" }
+tauri-cli = { path = "../../packages/bun-tauri/crates/aphrody-tauri-cli", package = "aphrody-tauri-cli" }
+create-tauri-app = { path = "../../packages/bun-tauri/crates/aphrody-create-tauri-app", package = "aphrody-create-tauri-app" }
 aphrody-embed = { path = "../aphrody-embed", default-features = false, features = ["server"] }
 aphrody-oxc-bridge = { version = "0.2.0" }
 aphrody-voice = { path = "../aphrody-voice", features = [] }
 walkdir = { version = "2.5.0" }
 ignore = { version = "0.4", features = [] }
 rayon = { version = "1.12.0" }
-aphrody-gemini-runtime = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-runtime", features = [] }
+aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime", features = [] }
 aphrody-re = { package = "bun-re", version = "1.0.0-canary", features = [] }
 ort = { version = "2.0.0-rc.12", optional = true }
 rusqlite = { version = "0.40", features = ["bundled"], optional = true }
@@ -174,8 +173,8 @@ aphrody-infer = { path = "../aphrody-infer", features = ["onnx"], optional = tru
 aphrody-ocr = { path = "../aphrody-ocr", features = [], optional = true }
 aphrody-jobs = { path = "../aphrody-jobs", features = [], optional = true }
 dirs = { version = "7.0.0" }
-aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", features = [] }
-aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", features = [] }
+aphrody-antigravity = { path = "../aphrody-antigravity", features = [] }
+aphrody-google = { path = "../aphrody-google", features = [] }
 aphrody-agent-home = { path = "../aphrody-agent-home", features = ["git"] }
 aphrody-agent-runtime = { path = "../aphrody-agent-runtime", features = [] }
 aphrody-config = { path = "../aphrody-config", features = [] }

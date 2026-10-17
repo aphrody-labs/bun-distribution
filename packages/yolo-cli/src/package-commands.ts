@@ -67,7 +67,7 @@ export const M3_TOOLS = {
     summary: "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
   },
   "web-to-tauri": {
-    module: "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri/src/cli.ts",
+    module: "packages/web-to-tauri/src/cli.ts",
     run: "runWebToTauri",
     summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
   },
@@ -101,7 +101,7 @@ export const PACKAGE_COMMANDS = {
     summary: "Tool pins, dependencies, Cargo lock, user systemd units, upstream sources",
   },
   google: {
-    module: "../bun/packages/bun-google/aphrody/packages/google/src/cli.ts",
+    module: "packages/google/src/cli.ts",
     run: "runGoogle",
     summary: "Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)",
   },
@@ -111,9 +111,9 @@ export const PACKAGE_COMMANDS = {
     summary: "Translate Markdown, generate Lit API guides, sync docs/",
   },
   browser: {
-    module: "../bun/packages/web/rust/packages/agent-browser/src/cli.ts",
+    module: "../bun/packages/bun-web/src/cli.ts",
     run: "runAgentBrowser",
-    summary: "One CDP browser command on the Obscura endpoint, as a JSON line",
+    summary: "One CDP browser command on the Bun browser endpoint, as a JSON line",
   },
   forge: {
     module: "packages/engine/yolo/src/cli/forge/main.ts",

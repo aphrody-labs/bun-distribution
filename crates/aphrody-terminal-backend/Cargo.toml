@@ -24,7 +24,7 @@ perf = { level = "warn", priority = -1 }
 [dependencies]
 aphrody-a2a-coord = { path = "../aphrody-a2a-coord", features = [] }
 portable-pty = "0.8"
-aphrody-terminal-core = { path = "../../toolchains/bun/packages/web/rust/integrations/crates/shell/terminal-core", features = [] }
+aphrody-terminal-core = { path = "../aphrody-terminal-core", features = [] }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "net"] }
 tokio-tungstenite = { version = "0.30", features = [] }
 futures-util = { version = "0.3", features = [] }

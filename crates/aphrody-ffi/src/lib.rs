@@ -51,7 +51,8 @@ pub use native::*;
 // All web C symbols are linked into this same cdylib. The Web implementation
 // remains in reusable Rust libraries; this module owns only the ABI adapters.
 #[cfg(not(target_arch = "wasm32"))]
-aphrody_web_source::module!("crates/interop/ffi/src/web/mod.rs", mod web);
+#[path = "web/mod.rs"]
+mod web;
 #[cfg(not(target_arch = "wasm32"))]
 pub use web::*;
 

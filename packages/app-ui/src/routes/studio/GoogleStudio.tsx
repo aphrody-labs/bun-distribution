@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { GoogleStudio as NativeGoogleStudio } from "@aphrody/web-source/integrations/m3/packages/app-ui/src/routes/studio/GoogleStudio.tsx";
+import { GoogleStudio as NativeGoogleStudio } from "./NativeGoogleStudio";
 import { isTauri } from "../../tauri-bridge";
 import { ProductSearchHome } from "../product/ProductSearchHome";
 import { useI18n } from "../../i18n";

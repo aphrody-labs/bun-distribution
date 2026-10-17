@@ -27,7 +27,8 @@
 
 pub mod everything;
 mod everything_sdk;
-aphrody_web_source::module!("crates/os/kernel/libs/fsindex/src/google.rs", pub mod google);
+#[path = "google.rs"]
+pub mod google;
 pub mod mft;
 #[cfg(windows)]
 pub mod ntfs_win;

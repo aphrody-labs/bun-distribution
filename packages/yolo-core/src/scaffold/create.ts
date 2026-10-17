@@ -76,24 +76,11 @@ export interface CreateOptions {
 
 /**
  * The template layers as `bun create` reads them: m3/templates, overlaid with the files of the layers whose
- * canonical source is @aphrody/web-source (integrations/m3/templates: the web and react pages).
+ * canonical source is packages/m3-templates of the OS (the web, react and spa pages).
  */
 function stageTemplates(rootDir: string): { dir: string; cleanup(): void } {
   const own = templatesRoot(rootDir);
-  let web: string;
-  try {
-    web = resolve(
-      dirname(
-        Bun.resolveSync(
-          "@aphrody/web-source/integrations/m3/templates/web/src/home.ts",
-          rootDir,
-        ),
-      ),
-      "../..",
-    );
-  } catch {
-    return { dir: own, cleanup() {} };
-  }
+  const web = join(rootDir, "packages/m3-templates");
   if (!existsSync(web)) return { dir: own, cleanup() {} };
   const staged = mkdtempSync(join(tmpdir(), "yolo-create-templates-"));
   const dir = join(staged, "m3", "templates");

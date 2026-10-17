@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-boq"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/bun"
+license = "Apache-2.0"
+description = "Google Boq batchexecute codec shared by the Gemini web and NotebookLM clients: f.req encoder, anti-XSSI strip, length-prefixed chunk parser, wrb.fr envelope extraction."
+
+
+[dependencies]
+serde_json = { workspace = true }
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }

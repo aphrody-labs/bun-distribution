@@ -14,8 +14,8 @@ description = "Canonical Bun Windows SDK for WinClean-compatible automation and 
 name = "bun_windows_winclean"
 
 [dependencies]
-aphrody-capture = { git = "https://github.com/aphrody-labs/aphrody.git", rev = "631434e1aa92291f417a09ee19c41056527402b4" }
-aphrody-proc = { git = "https://github.com/aphrody-labs/aphrody.git", rev = "631434e1aa92291f417a09ee19c41056527402b4" }
+aphrody-capture = { path = "../../crates/aphrody-capture" }
+aphrody-proc = { path = "../../crates/aphrody-proc" }
 aphrody-re = { package = "bun-re", path = "../../crates/re", version = "1.0.0-canary" }
 base64 = "0.23.1"
 image = { version = "0.25.10", features = ["png", "bmp"] }
@@ -39,4 +39,3 @@ windows = { version = "0.62.2", features = ["Foundation", "Globalization", "Grap
 [dev-dependencies]
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
 
-[workspace]

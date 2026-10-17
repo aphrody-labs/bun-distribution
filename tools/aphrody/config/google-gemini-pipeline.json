@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "name": "aphrody-google-gemini",
+  "binary": "aphrody-google",
+  "binaryCommands": ["status", "env", "doctor"],
+  "home": "${APHRODY_HOME:-~/.aphrody}",
+  "secretPolicy": "host-local-or-oauth-store",
+  "repositories": {
+    "aphrody-ai": { "project": "aphrody" },
+    "aphrody-os": { "project": "aphrody" },
+    "aphrody-web": { "project": "aphrody" },
+    "aphrody-infra": { "project": "aphrody" },
+    "nie": { "project": "aphrody" },
+    "dbfr": { "project": "aphrody" },
+    "shenron": { "project": "aphrody" },
+    "rg": { "project": "rgfr" }
+  },
+  "providers": {
+    "google-web": {
+      "owner": "external: bxc (not in this repository)",
+      "cookieJar": "${APHRODY_HOME}/cookies/google.json",
+      "capabilities": ["search", "fetch", "gemini-web"]
+    },
+    "gemini-web": {
+      "owner": "external: bxc (not in this repository)",
+      "cookieJar": "${APHRODY_HOME}/cookies/gemini.json",
+      "capabilities": ["ask", "chat", "scrape"]
+    },
+    "gemini-oauth": {
+      "owner": "crates/google/antigravity",
+      "credentialStore": "platform-native",
+      "capabilities": ["models", "chat", "agent-tools"]
+    }
+  },
+  "adapters": {
+    "python": { "entrypoint": "aphrody.google", "authority": "aphrody-google", "env": ["APHRODY_HOME", "APHRODY_VERTEX_PROJECT", "GOOGLE_CLOUD_PROJECT", "GOOGLE_CLOUD_LOCATION", "APHRODY_GCP_AUTH", "BXC_COOKIES_DIR"] },
+    "rust": { "entrypoint": "aphrody-google", "env": ["APHRODY_HOME", "APHRODY_VERTEX_PROJECT", "GOOGLE_CLOUD_PROJECT", "GOOGLE_CLOUD_LOCATION", "APHRODY_GCP_AUTH", "APHRODY_GEMINI_BIN"] },
+    "bun": { "entrypoint": "packages/google", "implementation": "packages/google/src", "sourceRepo": "aphrody-ai", "webImplementation": "external: bxc (not in this repository)/src/google", "env": ["APHRODY_HOME", "BXC_DIR", "BXC_COOKIES_DIR", "BXC_VENDOR_DIR", "BXC_BIN_DIR"] },
+    "doc-ai": { "sourceRepo": "aphrody-ai", "entrypoint": "packages/doc-ai/src/llm.ts", "provider": "@ai-sdk/google-vertex", "projectFrom": "APHRODY_VERTEX_PROJECT", "locationFrom": "APHRODY_VERTEX_LOCATION", "auth": "adc-or-secret-manager" },
+    "kernel": { "entrypoint": "aphrody-mcp", "transport": "stdio-or-local-http" },
+    "home-agent": { "entrypoint": "agy", "delegatesTo": "kernel" }
+  },
+  "routing": {
+    "search": ["google-web"],
+    "web-gemini": ["gemini-web", "gemini-oauth"],
+    "agent-gemini": ["gemini-oauth", "gemini-web"],
+    "fallback": "fail-closed"
+  },
+  "forbidden": ["raw-cookie-in-git", "cookie-forwarding-between-hosts", "secret-in-logs"]
+}

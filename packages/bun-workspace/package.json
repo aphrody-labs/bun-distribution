@@ -34,7 +34,6 @@
     "@aphrody/runtime-sdk": "catalog:",
     "@aphrody/timeline": "workspace:*",
     "@aphrody/update": "workspace:*",
-    "@aphrody/web-source": "workspace:*",
     "@aphrody/yolo-core": "workspace:*",
     "ts-morph": "catalog:"
   },

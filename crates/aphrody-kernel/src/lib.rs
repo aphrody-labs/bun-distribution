@@ -35,7 +35,8 @@ pub mod compat;
 pub mod coreutils;
 pub mod events;
 pub mod execpolicy;
-aphrody_web_source::module!("crates/os/kernel/core/src/gcs.rs", mod gcs);
+#[path = "gcs.rs"]
+mod gcs;
 pub mod host_service;
 pub mod hvsock;
 pub mod infra;

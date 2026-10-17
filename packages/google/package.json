@@ -1,0 +1,43 @@
+{
+  "name": "@aphrody/google",
+  "version": "1.4.4",
+  "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
+  "license": "Apache-2.0",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime.ts",
+    "./api": "./src/api.ts",
+    "./drive-sync": "./src/drive-sync.ts",
+    "./drive-model-sync": "./src/drive-model-sync.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --format esm",
+    "google:status": "bun ./src/cli.ts drive status",
+    "google:sync": "bun ./src/cli.ts drive sync",
+    "test": "bun test ./test",
+    "verify": "bun run test && bun run build"
+  },
+  "dependencies": {
+    "@ai-sdk/google-vertex": "5.0.101",
+    "@aphrody/bun-google": "1.4.4",
+    "@googleapis/docs": "14.1.0",
+    "@googleapis/drive": "26.0.2",
+    "ai": "7.0.127",
+    "google-auth-library": "11.1.0"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/google"
+  }
+}

@@ -595,8 +595,6 @@ async function main() {
         "--porcelain",
         "--",
         "packages/bun-google/src/search.ts",
-        "packages/web/rust/crates/site/data/docs.json",
-        "packages/web/rust/transfer-receipt.json",
       ],
       bunCheckout,
     )

@@ -64,7 +64,7 @@ doc               = false
 required-features = ["test-support"]
 
 [dependencies]
-aphrody-gemini-web = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-web", features = [] }
+aphrody-gemini-web = { path = "../aphrody-gemini-web", features = [] }
 aphrody-models = { path = "../aphrody-models", features = [] }
 aphrody-proc = { path = "../aphrody-proc", features = [] }
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }

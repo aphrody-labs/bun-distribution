@@ -19,6 +19,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./backend": "./backend.ts",
+    "./webos": "./webos.ts",
     "./styles.css": "./src/styles.css",
     "./showcase": "./showcase/src/App.tsx"
   },
@@ -78,7 +79,6 @@
     "@aphrody/material-design-icons": "workspace:*",
     "@aphrody/qr": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
-    "@aphrody/web-source": "workspace:*",
     "@aphrody/webos-wasm": "workspace:*",
     "@dnd-kit/core": "catalog:",
     "@dnd-kit/sortable": "catalog:",

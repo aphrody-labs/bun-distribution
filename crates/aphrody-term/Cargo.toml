@@ -32,7 +32,7 @@ memchr = "2"
 parking_lot = "0.12.5"
 
 [dev-dependencies]
-aphrody-terminal-core = { path = "../../toolchains/bun/packages/web/rust/integrations/crates/shell/terminal-core", features = [] }
+aphrody-terminal-core = { path = "../aphrody-terminal-core", features = [] }
 
 [features]
 default = []

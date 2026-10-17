@@ -23,7 +23,7 @@ perf = { level = "warn", priority = -1 }
 
 [dependencies]
 aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
-aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", features = [] }
+aphrody-antigravity = { path = "../aphrody-antigravity", features = [] }
 aphrody-config = { path = "../aphrody-config", features = [] }
 aphrody-kernel = { path = "../aphrody-kernel", default-features = false, features = [] }
 aphrody-llama-server = { path = "../aphrody-llama-server", features = [] }

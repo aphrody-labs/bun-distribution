@@ -1,0 +1,3 @@
+# This standalone protocol crate retains its source owner's public Rust API.
+# Runtime-only Bun SIMD substitutions do not apply to this dependency-free codec.
+disallowed-methods = []

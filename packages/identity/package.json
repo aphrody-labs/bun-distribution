@@ -44,7 +44,6 @@
     "measure": "bun scripts/measure.ts"
   },
   "dependencies": {
-    "@aphrody/web-source": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { dirname, relative, resolve } from "node:path";
-import { checkoutPath } from "@aphrody/paths";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
 const copies = [
@@ -19,17 +18,6 @@ const copies = [
       "sync-contract.json",
     ),
   ],
-  ...[
-    "x-graphql-catalog.json",
-    "gryphon-graphql-catalog.json",
-    "x-policy.json",
-  ].map((name) => [
-    checkoutPath("bun", "packages/web/rust/crates/x/data", name),
-    Bun.resolveSync(
-      `@aphrody/web-source/packages/x/data/${name}`,
-      import.meta.dir,
-    ),
-  ]),
 ];
 for (const [source, packaged] of copies) {
   test(`packaged config preserves canonical owner: ${relative(root, source!)}`, async () => {

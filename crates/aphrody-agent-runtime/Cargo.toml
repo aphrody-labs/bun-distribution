@@ -41,8 +41,8 @@ aphrody-llama-server = { path = "../aphrody-llama-server", features = [] }
 aphrody-config = { path = "../aphrody-config", features = [] }
 aphrody-mcp-client = { path = "../aphrody-mcp-client", features = [] }
 aphrody-rag = { path = "../aphrody-rag", features = [], optional = true }
-aphrody-model-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/model-antigravity", features = [] }
-aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", features = [] }
+aphrody-model-antigravity = { path = "../aphrody-model-antigravity", features = [] }
+aphrody-antigravity = { path = "../aphrody-antigravity", features = [] }
 serde_json = "1.0.151"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
@@ -53,7 +53,7 @@ which = { version = "8", features = [] }
 tracing = "0.1.44"
 
 [dev-dependencies]
-aphrody-jev = { git = "https://github.com/aphrody-labs/bun", rev = "892ea1ae93820a9ea839027ff466f44f732ccfa8", version = "1.4.4", default-features = false, features = ["client"] }
+aphrody-jev = { path = "../aphrody-jev", version = "1.4.4", default-features = false, features = ["client"] }
 pretty_assertions = { version = "1", features = [] }
 tempfile = "3.27.0"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

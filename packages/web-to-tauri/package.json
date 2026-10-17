@@ -38,7 +38,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@aphrody/agent-browser": "workspace:*",
+    "@aphrody/bun-web": "workspace:*",
     "@aphrody/scaffold": "workspace:*"
   },
   "devDependencies": {

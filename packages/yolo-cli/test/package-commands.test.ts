@@ -239,7 +239,7 @@ describe("yolo package commands", () => {
       [["update", "help"], "yolo update check"],
       [["google", "--help"], "yolo google <drive|fonts>"],
       [["doc-ai", "--help"], "yolo doc-ai translate"],
-      [["browser", "--version"], "@aphrody/agent-browser"],
+      [["browser", "--version"], "@aphrody/bun-web"],
       [["forge", "--help"], "yolo forge doctor"],
       [["forge", "version"], "yolo forge 0.1.1"],
       [["m3", "--help"], "Tools (yolo m3 <tool> ...):"],

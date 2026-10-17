@@ -1,0 +1,47 @@
+[
+  {
+    "id": "runtime-architecture",
+    "category": "Architecture",
+    "title": "Aphrody OS: Bun runtime and native SDK architecture",
+    "summary": "The Bun fork, shared native C ABI and TypeScript SDK behind Aphrody OS, with separate source and deployment contracts.",
+    "readTime": "2 min read",
+    "tags": ["Aphrody OS", "Bun", "C ABI", "bun:ffi", "Native SDK"],
+    "content": "# Aphrody OS runtime and native SDK\n\nAphrody OS brings a browser interface, a desktop shell and a cross-platform CLI around shared capability owners. The runtime comes from the private `aphrody-labs/bun` fork. Product workflows and the canonical interface remain in the Aphrody monorepo.\n\n## Bun runtime\n\nBun provides the JavaScriptCore runtime, Web APIs, bundler, package manager and test runner. Fork API documentation lives in the fork's `docs/` tree. Aphrody records its selected documentation revision in `docs/reference/upstream-bun/SOURCE.json`; it does not maintain a second Bun documentation tree.\n\n## Native SDK\n\n`packages/engine/runtime` declares `@aphrody/runtime-sdk`. Its FFI loader uses `dlopen` from `bun:ffi`. The native library boundary is `aphrody_ffi` in `crates/interop/ffi`, and `include/aphrody.h` retains the `aphrody_*` and `yolo_*` compatibility identities. The ABI contract requires version checks, opaque handles and library-owned buffer release.\n\n## Qualification\n\nSource declarations do not prove that every native module is installed or active on every platform. Check the selected artifact, ABI and target before enabling a native capability.\n\n## Source references\n\n- [Aphrody architecture and active plan](https://github.com/aphrody-labs/aphrody/blob/main/PLAN.md)\n- [Native ABI header](https://github.com/aphrody-labs/aphrody/blob/main/crates/interop/ffi/include/aphrody.h)\n- [Runtime SDK](https://github.com/aphrody-labs/aphrody/tree/main/packages/engine/runtime)\n- [Bun fork documentation](https://github.com/aphrody-labs/bun/tree/main/docs)\n\nReviewed against repository sources on 2026-10-09. Repository links require authorized access."
+  },
+  {
+    "id": "bun-native-framework",
+    "category": "Framework & Bun",
+    "title": "Bun, Next.js and Material in the Aphrody UI",
+    "summary": "Where the runtime, shared M3 framework and product UI are owned, and how web and desktop frontends consume them.",
+    "readTime": "2 min read",
+    "tags": ["Bun", "Next.js", "Tailwind CSS", "Material 3", "Web development"],
+    "content": "# Bun, Material and the Aphrody UI\n\nThe Bun fork owns runtime changes, built-in modules and Bun build tooling. Material owns the shared Material 3 framework, tokens, libm3, controls and canonical @aphrody/app-ui source. Aphrody owns product workflows and integrates those shared interfaces.\n\n## Shared interface\n\nMaterial's pinned app-ui source provides the shared UI package consumed by Aphrody's web and desktop products. Aphrody retains product routes, host integration and application behavior. A source pin or successful frontend build does not by itself prove native rendering or deployment.\n\n## Framework adapters\n\nMaterial owns its Material 3 and Next.js packages; Tailwind retains its own source and build contract. Consult each selected package manifest and its owner documentation before choosing an API. Package presence does not prove production activation or comparative performance.\n\n## Source references\n\n- [Material workspace](https://github.com/aphrody-labs/material)\n- [Material 3 source](https://github.com/aphrody-labs/aphrody-m3)\n- [Shared app-ui source](https://github.com/aphrody-labs/aphrody-app-ui)\n- [Aphrody product UI integration](https://github.com/aphrody-labs/aphrody/tree/main/crates/ui)\n- [Bun runtime and build documentation](https://github.com/aphrody-labs/bun/tree/main/docs)\n\nReviewed against the selected repository checkouts on 2026-10-13. Repository links require authorized access."
+  },
+  {
+    "id": "material-3-design-tokens",
+    "category": "Material 3",
+    "title": "Material 3 color tokens and dynamic themes",
+    "summary": "Material 3 dynamic schemes and native tokens, with the remaining web-to-native convergence stated explicitly.",
+    "readTime": "2 min read",
+    "tags": ["Material 3", "Tokens", "HCT Color", "Theming", "Accessibility"],
+    "content": "# Material 3 color tokens\n\nThe Material 3 source provides the TypeScript dynamic-color API in packages/m3-tokens/src/dynamic-color.ts. The native token engine is owned by crates/m3-tokens; crates/libm3 consumes that engine and crates/libm3-wasm exposes its scalar ABI.\n\n## Web and native boundary\n\nThe web dynamic-color API and native Rust token engine currently remain separate implementations inside the Material ownership workspace. Material's active plan still tracks routing the web API through the qualified native binding; repository ownership alone does not prove that convergence.\n\n## HCT and semantic roles\n\nHCT represents hue, chroma and tone. A seed and scheme configuration resolve semantic roles such as primary and surface with associated foreground colors. Components consume roles rather than assuming one hexadecimal value fits every theme.\n\n## Contrast and accessibility\n\nTheme configuration is not a blanket accessibility guarantee. Check contrast, keyboard navigation, focus indicators and readable text in rendered light and dark interfaces, including custom component states.\n\n## Source references\n\n- [TypeScript dynamic-color API](https://github.com/aphrody-labs/aphrody-m3/blob/main/packages/m3-tokens/src/dynamic-color.ts)\n- [Native token owner](https://github.com/aphrody-labs/material/tree/main/crates/m3-tokens)\n- [libm3 adapter](https://github.com/aphrody-labs/material/tree/main/crates/libm3)\n- [Material workspace plan](https://github.com/aphrody-labs/material/blob/main/PLAN.md)\n- [Material color system](https://m3.material.io/styles/color/overview)\n\nReviewed against the selected repository checkouts on 2026-10-13. Repository links require authorized access."
+  },
+  {
+    "id": "tauri-desktop-bridge",
+    "category": "Desktop & Tauri",
+    "title": "Aphrody desktop: CEF, Tauri and the shared UI bridge",
+    "summary": "The canonical desktop shell, its frontend configuration and the RPC shared with the web application.",
+    "readTime": "2 min read",
+    "tags": ["Aphrody OS", "Desktop", "Tauri", "CEF", "RPC"],
+    "content": "# Aphrody desktop and the shared UI\n\nThe desktop shell lives in Aphrody's crates/ui/app. Its manifest selects tauri-runtime-cef; its Tauri configuration sets frontendDist to ui-dist and declares the main window. Material pins the shared frontend source from aphrody-app-ui, while Aphrody owns the product shell and host integration.\n\n## Shared RPC\n\nThe shared frontend bridge routes aphrodyRpc through the aphrody_rpc desktop command inside Tauri and through same-origin POST /rpc in the browser. The app-server requires an initialization handshake. Studio also contains explicitly registered native commands; a web route does not automatically gain desktop privileges.\n\n## Deployment boundary\n\nA configured frontend and a compiled shell are separate from an installed application running on a physical desktop. Check the installed artifact and its supported target before claiming native activation. The former apps/web ping bridge is not the current architecture.\n\n## Source references\n\n- [Aphrody desktop shell](https://github.com/aphrody-labs/aphrody/tree/main/crates/ui/app)\n- [Shared app-ui source](https://github.com/aphrody-labs/aphrody-app-ui)\n- [Material ownership workspace](https://github.com/aphrody-labs/material)\n\nReviewed against the selected repository checkouts on 2026-10-13. Repository links require authorized access."
+  },
+  {
+    "id": "llms-txt-standard",
+    "category": "LLM & Memory",
+    "title": "Aphrody agent context, llms.txt and isolated memory",
+    "summary": "Repository guidance, public AI-readable context and domain-isolated memory, without implicit provider synchronization.",
+    "readTime": "2 min read",
+    "tags": ["llms.txt", "Agents", "Memory", "Aphrody OS", "Privacy"],
+    "content": "# Agent context and isolated memory\n\n`AGENTS.md` defines repository conventions and capability ownership. `PLAN.md` records the active architecture and queue, while `MEMORY.md` records dated evidence and limits. These files guide coding agents; they do not change model training.\n\n## Public context\n\nThe live `https://aphrody.com/llms.txt` endpoint returned an Aphrody overview during the 2026-10-09 audit. Treat it as a public context document rather than a guarantee of search indexing, ranking or deployment completeness.\n\n## Native memory\n\n`aphrody home` and `aphrody graph` provide the native home and graph surfaces. The `aphrody`, `dbfr` and `ie` profiles remain isolated. Provider authentication, cookies and raw provider histories stay in their protected stores; no provider-memory synchronization is implied.\n\n## Source references\n\n- [Public llms.txt](https://aphrody.com/llms.txt)\n- [Repository guidance](https://github.com/aphrody-labs/aphrody/blob/main/AGENTS.md)\n- [Active architecture](https://github.com/aphrody-labs/aphrody/blob/main/PLAN.md)\n\nReviewed against repository sources and the public context endpoint on 2026-10-09. Repository links require authorized access."
+  }
+]

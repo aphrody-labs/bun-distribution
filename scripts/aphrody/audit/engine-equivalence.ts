@@ -10,7 +10,7 @@
 import { $ } from "bun";
 import { join, posix } from "node:path";
 import { checkoutRoot } from "@aphrody/paths";
-import { obscuraSourceRoot } from "@aphrody/web-source/integrations/scripts/tools/web/obscura-sources.ts";
+import { obscuraSourceRoot } from "../web/tools/obscura-sources.ts";
 
 const ROOT = join(import.meta.dir, "../../../docs/aphrody");
 const BUN_CHECKOUT = checkoutRoot("bun");

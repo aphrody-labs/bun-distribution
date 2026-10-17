@@ -26,7 +26,8 @@ pub mod registry;
 pub mod schema;
 pub mod transport;
 #[cfg(not(target_arch = "wasm32"))]
-aphrody_web_source::module!("crates/ai/mcp-client/src/web.rs", pub mod web);
+#[path = "web.rs"]
+pub mod web;
 
 pub use builtins::{
     PlanState, ToolCatalog, ToolSearchResult, ToolSearchTool, UpdatePlanTool, ViewImageTool,

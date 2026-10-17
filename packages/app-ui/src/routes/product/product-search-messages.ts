@@ -113,5 +113,5 @@ export const nativeGoogleMessages = {
   },
 } satisfies Record<
   SupportedLanguage,
-  import("@aphrody/web-source/integrations/m3/packages/app-ui/src/routes/studio/GoogleStudio.tsx").GoogleStudioMessages
+  import("../studio/NativeGoogleStudio").GoogleStudioMessages
 >;

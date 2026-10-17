@@ -22,7 +22,6 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 thiserror = "2.0.20"
 walkdir = "2.5.0"

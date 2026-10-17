@@ -16,7 +16,7 @@ aphrody-proc = { path = "../aphrody-proc", features = [] }
 yolo-core = { version = "1.0.0", features = ["repository-tools"] }
 anyhow = "1.0.104"
 aphrody-fsindex = { path = "../aphrody-fsindex", features = [] }
-aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/git" }
+aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
 aphrody-kernel-client = { path = "../aphrody-kernel-client" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }

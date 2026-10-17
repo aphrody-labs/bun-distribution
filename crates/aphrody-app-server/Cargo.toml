@@ -30,17 +30,16 @@ in-process = ["aphrody-agent-runtime/in-process"]
 site = ["dep:aphrody-site"]
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
 async-trait = "0.1.92"
 futures = "0.3.34"
 aphrody-agent-runtime = { path = "../aphrody-agent-runtime", features = [] }
 aphrody-agent-proto = { path = "../aphrody-agent-proto", features = [] }
 aphrody-app-protocol = { path = "../aphrody-app-protocol", features = [] }
-aphrody-site = { path = "../../toolchains/bun/packages/web/rust/crates/site", optional = true }
+aphrody-site = { path = "../aphrody-site", optional = true }
 aphrody-llama-server = { path = "../aphrody-llama-server", features = [] }
 aphrody-config = { path = "../aphrody-config", features = [] }
-aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", features = [] }
+aphrody-google = { path = "../aphrody-google", features = [] }
 aphrody-model-client = { path = "../aphrody-model-client", features = [] }
 aphrody-models = { path = "../aphrody-models", features = [] }
 aphrody-rollout = { path = "../aphrody-rollout", features = [] }

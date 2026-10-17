@@ -31,12 +31,11 @@ builtins = [
 ]
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
 aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
 aphrody-subsystem = { path = "../aphrody-subsystem" }
 aphrody-kernel-client = { path = "../aphrody-kernel-client" }
 aphrody-toolchains = { path = "../aphrody-toolchains", features = [] }
-aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", features = [] }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../packages/bun-windows-winclean", features = [] }
 async-trait = "0.1.92"
 gix = { version = "0.88", default-features = false, features = ["sha1", "basic", "extras", "comfort", "max-performance-safe", "revision", "index", "worktree-mutation"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }

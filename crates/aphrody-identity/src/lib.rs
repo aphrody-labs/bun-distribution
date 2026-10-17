@@ -38,7 +38,8 @@ pub mod pixel;
 /// Thèmes de terminal (Windows Terminal, Rio, Nushell, prompt du Bun Shell) tirés du schéma M3.
 pub mod terminal_theme;
 /// Le pet sur le web : données générées pour `<aphrody-pet>` et suite de parité Rust ↔ web.
-aphrody_web_source::module!("crates/ui/identity/src/web.rs", pub mod web);
+#[path = "web.rs"]
+pub mod web;
 
 #[cfg(feature = "fs")]
 pub use cli::{

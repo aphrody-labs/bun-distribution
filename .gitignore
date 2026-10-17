@@ -13,6 +13,8 @@
 # Nested source workspaces
 **/dist/
 **/target
+# Cargo output directories, not Rust modules named target.
+!**/src/target/
 **/node_modules
 
 # Protected local state and credentials

@@ -84,8 +84,7 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust" }
-aphrody-jev = { git = "https://github.com/aphrody-labs/bun", rev = "892ea1ae93820a9ea839027ff466f44f732ccfa8", version = "1.4.4", default-features = false, features = ["client"] }
+aphrody-jev = { path = "../aphrody-jev", version = "1.4.4", default-features = false, features = ["client"] }
 aphrody-models = { path = "../aphrody-models", features = [] }
 aphrody-config = { path = "../aphrody-config", features = [] }
 aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
@@ -93,13 +92,13 @@ aphrody-kernel = { path = "../aphrody-kernel", default-features = false, feature
 aphrody-web-extract = { path = "../../toolchains/bun/src/browser/crates/extract", package = "bun_browser_extract" }
 aphrody-web-detect = { path = "../../toolchains/bun/src/browser/crates/detect", package = "bun_browser_detect", features = ["fetch"] }
 aphrody-web-crawl = { path = "../../toolchains/bun/src/browser/crates/crawl", package = "bun_browser_crawl" }
-aphrody-x = { path = "../../toolchains/bun/packages/web/rust/crates/x", features = [] }
+aphrody-x = { path = "../../toolchains/bun/src/x", package = "bun_x", features = [] }
 rmcp = { version = "3.5.0", features = ["server", "transport-io", "transport-streamable-http-server", "macros", "schemars"] }
 tokio-postgres = { version = "0.7.18", features = ["with-serde_json-1"] }
 aphrody-sql = { path = "../aphrody-sql", default-features = false, features = ["postgres"] }
 aphrody-a2a = { path = "../aphrody-a2a", features = [] }
 aphrody-a2a-server = { path = "../aphrody-a2a-server", default-features = false, features = [] }
-aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/git" }
+aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
 anyhow = "1.0.104"
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
@@ -118,8 +117,8 @@ tokio-tungstenite = { version = "0.30", features = [] }
 futures-util = { version = "0.3", features = [] }
 sysinfo = { version = "0.39.6", features = ["system", "disk"], default-features = false }
 aphrody-backend = { path = "../aphrody-backend", features = [] }
-aphrody-gemini-runtime = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-runtime", features = [] }
-aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", features = [] }
+aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime", features = [] }
+aphrody-google = { path = "../aphrody-google", features = [] }
 aphrody-firefly = { path = "../aphrody-firefly", features = [] }
 aphrody-capture = { path = "../aphrody-capture", features = [] }
 which = { version = "8", features = [] }
@@ -135,15 +134,15 @@ name    = "initialize_handshake"
 harness = false
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-site = { path = "../../toolchains/bun/packages/web/rust/crates/site" }
+aphrody-site = { path = "../aphrody-site" }
 aphrody-remote-desktop = { path = "../aphrody-remote-desktop", features = ["vnc-client"] }
 aphrody-voice = { path = "../aphrody-voice", features = [] }
 base64 = { version = "0.23.1" }
 aphrody-re = { package = "bun-re", version = "1.0.0-canary", features = [] }
 dirs = { version = "7.0.0" }
-aphrody-gemini-web = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-web", features = [] }
+aphrody-gemini-web = { path = "../aphrody-gemini-web", features = [] }
 aphrody-llama-server = { path = "../aphrody-llama-server", features = [], optional = true }
-aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", features = [] }
+aphrody-web-service = { path = "../../toolchains/bun/src/browser/crates/service", package = "bun_browser_service", features = [] }
 regex = { version = "1.11", features = [] }
 aphrody-session = { path = "../aphrody-session", features = ["memory"] }
 aphrody-memory = { path = "../aphrody-memory", features = [] }
@@ -155,7 +154,7 @@ aphrody-vision = { path = "../aphrody-vision", features = [], optional = true }
 aphrody-jobs = { path = "../aphrody-jobs", features = [], optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 tempfile = { version = "3.27.0", optional = true }
-aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", features = [], optional = true }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../packages/bun-windows-winclean", features = [], optional = true }
 aphrody-rag = { path = "../aphrody-rag", features = [], optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
