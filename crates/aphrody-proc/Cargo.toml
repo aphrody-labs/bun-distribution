@@ -33,7 +33,7 @@ tracing = { workspace = true }
 tokio = { workspace = true, optional = true, features = ["full"] }
 
 [target.'cfg(unix)'.dependencies]
-rustix = { workspace = true }
+rustix = { workspace = true, features = ["process", "std"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = ["Win32_Foundation",
