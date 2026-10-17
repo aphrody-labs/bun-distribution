@@ -652,4 +652,6 @@ license and notice with its source. Do not force-push.
 - [x] Stage-adapter registry: existing owners (steamcmd, nie-*, wii, bun-engine-nds, ghidra-decompiler, factory, emulators) are referenced by id or command and report `ready`, `registered` or `unavailable`; none are duplicated.
 - [x] Built-in end-to-end path: PE/ELF x86 lift (goblin, iced-x86) to IR, C and Rust emission, clang and rustc rebuild, verification by compiling the emitted code.
 - [x] `bun re pipeline <input> --target <os|bios|firmware>`, MCP tools and a loopback API over `bunre pipeline`.
-- [ ] Qualify Ghidra headless and the external adapters on a host that has them; add lifters for ARM, MIPS and PowerPC through the registry.
+- [x] Ghidra 12 headless (import + analysis) and the built-in pipeline qualified on a clang-built PE x64: all stages ok, x86 lift 15/15 instructions, C and Rust rebuild verified.
+- [x] Replica suite (`packages/re/tests/replica`): 52 unittest tests pass.
+- [ ] Add lifters for ARM, MIPS and PowerPC through the registry.

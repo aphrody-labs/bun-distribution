@@ -2662,16 +2662,46 @@
     {
       "submodule": null,
       "component": "bun-engine-android-extras",
+      "path": "packages/android-pipeline/docs, packages/android-pipeline/tools/ghidra",
+      "type": "docs-and-scripts",
+      "source": {
+        "repository": "aphrody-labs/bun-engine",
+        "visibility": "public",
+        "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
+        "path": "docs/android/android-october-2026.md, docs/android/references (11), tools/android/SmokeNativeExports.java, tools/android/SmokeSummary.java"
+      },
+      "bunOwner": "@aphrody/bun-engine-android",
+      "migrationState": "merged-copy",
+      "history": "source repository (public); not grafted",
+      "notes": "version reference translated to English as docs/compose-versions.md with workspace paths; Maven metadata snapshots and Ghidra export smoke scripts copied unchanged; same MIT license"
+    },
+    {
+      "submodule": null,
+      "component": "bun-engine-android-root-docs-and-scripts",
       "path": null,
       "type": "docs-and-scripts",
       "source": {
         "repository": "aphrody-labs/bun-engine",
         "visibility": "public",
         "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
-        "path": "docs/android (17), tools/android (9), packages/java-latest (3)"
+        "path": "docs/android/{README,GOAL,PLAN,START-HERE,PROVENANCE,LICENSE}.md, tools/android/{env,bun,build-rust,build-android,test-java-ffi,migrate-env-to-windows-vault}.ps1, tools/android/git-consolidate.ts"
       },
-      "migrationState": "pending",
-      "notes": "Android owners are packages/android-pipeline and docs; java-latest was excluded by the Android absorption"
+      "migrationState": "retired",
+      "notes": "superseded: root docs by PLAN.md and the owner READMEs (LICENSE identical to the owners'); PowerShell build/env/JNI scripts by bun android build (packages/bun-android, native admission mutex) and packages/android-web scripts; git-consolidate.ts was a one-off consolidation of the former sibling android checkouts; the .env-to-Windows-vault migration belongs to the Infra protected secret stores. Not carried"
+    },
+    {
+      "submodule": null,
+      "component": "bun-engine-java-latest",
+      "path": null,
+      "type": "java-smoke",
+      "source": {
+        "repository": "aphrody-labs/bun-engine",
+        "visibility": "public",
+        "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
+        "path": "packages/java-latest (3)"
+      },
+      "migrationState": "retired",
+      "notes": "non-Android JDK 27 hello-world smoke bound to a host JDK install path; excluded by the Android absorption, the JDK is a host toolchain and apps/java-ffi owns the Java FFI qualification. Not carried"
     }
   ]
 }

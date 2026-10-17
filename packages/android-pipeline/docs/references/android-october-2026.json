@@ -1,0 +1,224 @@
+{
+  "verifiedAt": "2026-10-12",
+  "toolOwner": "aphrody-mcp",
+  "context7": {
+    "resolvedLibrary": "Jetpack Compose",
+    "indices": [
+      {
+        "id": "/websites/developer_android_develop_ui_compose",
+        "lastUpdateDate": "2026-10-02T12:59:45.179Z",
+        "queried": true
+      },
+      {
+        "id": "/android/compose-samples",
+        "lastUpdateDate": "2026-09-23T12:09:01.855Z",
+        "queried": true
+      },
+      {
+        "id": "/websites/android_googlesource_platform_frameworks_support_androidx-main_compose",
+        "lastUpdateDate": "2026-10-10T00:44:54.229Z",
+        "queried": true,
+        "status": "quota_exceeded"
+      }
+    ],
+    "queries": [
+      {
+        "topic": "setup",
+        "sources": [
+          "https://developer.android.com/develop/ui/compose/compiler",
+          "https://developer.android.com/develop/ui/compose/setup-compose-dependencies-and-compiler",
+          "https://developer.android.com/develop/ui/compose/bom"
+        ],
+        "status": "success"
+      },
+      {
+        "topic": "composeState",
+        "status": "success",
+        "sources": [
+          "https://developer.android.com/develop/ui/compose/state-saving",
+          "https://developer.android.com/develop/ui/compose/state-hoisting",
+          "https://developer.android.com/develop/ui/compose/architecture",
+          "https://developer.android.com/develop/ui/compose/state",
+          "https://developer.android.com/develop/ui/compose/lists",
+          "https://developer.android.com/develop/ui/compose/text/migrate-state-based",
+          "https://developer.android.com/develop/ui/compose/side-effects",
+          "https://developer.android.com/develop/ui/compose/text/user-input",
+          "https://developer.android.com/develop/ui/compose/quick-guides/content/filter-list-while-typing",
+          "https://developer.android.com/develop/ui/compose/state-lifespans"
+        ]
+      },
+      {
+        "topic": "composeResearch0",
+        "status": "success",
+        "sources": [
+          "https://developer.android.com/develop/ui/compose/performance/bestpractices",
+          "https://developer.android.com/develop/ui/compose/performance/backwards-write",
+          "https://developer.android.com/develop/ui/compose/lists",
+          "https://developer.android.com/develop/ui/compose/state",
+          "https://developer.android.com/develop/ui/compose/side-effects",
+          "https://developer.android.com/develop/ui/compose/state-saving",
+          "https://developer.android.com/develop/ui/compose/performance/stability/strongskipping",
+          "https://developer.android.com/develop/ui/compose/text/migrate-state-based",
+          "https://developer.android.com/develop/ui/compose/mental-model"
+        ]
+      },
+      {
+        "topic": "composeResearch1",
+        "status": "success",
+        "sources": [
+          "https://developer.android.com/develop/ui/compose/designsystems/custom",
+          "https://developer.android.com/develop/ui/compose/designsystems/material",
+          "https://developer.android.com/develop/ui/compose/testing/semantics",
+          "https://developer.android.com/develop/ui/compose/designsystems/material3",
+          "https://developer.android.com/develop/ui/compose/accessibility/merging-clearing",
+          "https://developer.android.com/develop/ui/compose/accessibility/api-defaults",
+          "https://developer.android.com/develop/ui/compose/designsystems/anatomy",
+          "https://developer.android.com/develop/ui/compose/modifiers-list"
+        ]
+      },
+      {
+        "topic": "composeResearch2",
+        "status": "success",
+        "sources": [
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/jetchat-app.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/jetsnack-app.md",
+          "https://github.com/android/compose-samples/blob/main/Jetcaster/README.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/reply-app.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/jetlagged.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/jetnews-navigation.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/jetcaster-ui.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/reply-adaptive-ui.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/configuration.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/jetcaster-multiform-factor.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/reply-data.md",
+          "https://github.com/android/compose-samples/blob/main/_autodocs/api-reference/jetsnack-components.md"
+        ]
+      },
+      {
+        "topic": "adaptive/source AndroidX",
+        "status": "quota_exceeded",
+        "fallback": "Direct primary Android Developers and GitHub sources"
+      }
+    ]
+  },
+  "maven": {
+    "bom": {
+      "version": "2026.09.00",
+      "metadata": "https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml",
+      "pom": "https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/2026.09.00/compose-bom-2026.09.00.pom",
+      "dependencies": [
+        {
+          "group": "androidx.compose.foundation",
+          "artifact": "foundation",
+          "version": "1.12.1"
+        },
+        {
+          "group": "androidx.compose.material3",
+          "artifact": "material3",
+          "version": "1.4.0"
+        },
+        {
+          "group": "androidx.compose.material3.adaptive",
+          "artifact": "adaptive",
+          "version": "1.3.0"
+        },
+        {
+          "group": "androidx.compose.material3.adaptive",
+          "artifact": "adaptive-layout",
+          "version": "1.3.0"
+        },
+        {
+          "group": "androidx.compose.material3.adaptive",
+          "artifact": "adaptive-navigation",
+          "version": "1.3.0"
+        },
+        {
+          "group": "androidx.compose.runtime",
+          "artifact": "runtime",
+          "version": "1.12.1"
+        },
+        {
+          "group": "androidx.compose.ui",
+          "artifact": "ui",
+          "version": "1.12.1"
+        }
+      ]
+    },
+    "kotlin": {
+      "stable": "2.4.21",
+      "latest": "2.5.0-Beta1",
+      "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml"
+    },
+    "agp": {
+      "stable": "9.4.1",
+      "latest": "9.5.0-alpha09",
+      "source": "https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml"
+    },
+    "activityCompose": {
+      "stable": "1.13.0",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/activity/activity-compose/maven-metadata.xml"
+    },
+    "lifecycleRuntimeCompose": {
+      "stable": "2.11.0",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime-compose/maven-metadata.xml"
+    },
+    "materialComponentsViews": {
+      "stable": "1.14.0",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/android/material/material/maven-metadata.xml"
+    }
+  },
+  "github": [
+    {
+      "repository": "android/compose-samples",
+      "branch": "main",
+      "sha": "5a390e4a9d3c4e5b30e942041bde93582c4d9492",
+      "commitDate": "2026-10-06T06:04:18Z"
+    },
+    {
+      "repository": "android/nowinandroid",
+      "branch": "main",
+      "sha": "a49ed253d75e61a2b6ab80a8da677b57437b08eb",
+      "commitDate": "2026-09-22T07:09:53Z"
+    },
+    {
+      "repository": "androidx/androidx",
+      "branch": "androidx-main",
+      "sha": "034d37ae95b7db8560e520c0366696af56a37b96",
+      "commitDate": "2026-10-12T00:38:40Z"
+    },
+    {
+      "repository": "material-components/material-components-android",
+      "branch": "master",
+      "sha": "60ff09436d5d477a4b9d02940f31eb01e1250620",
+      "commitDate": "2026-09-14T20:07:53Z"
+    }
+  ],
+  "primaryDocsFallback": [
+    {
+      "url": "https://developer.android.com/develop/ui/compose/layouts/adaptive/build-adaptive-navigation",
+      "pageUpdated": "2026-09-22",
+      "retrieved": true
+    },
+    {
+      "url": "https://developer.android.com/develop/ui/compose/performance/baseline-profiles",
+      "pageUpdated": "2026-06-13",
+      "retrieved": true
+    },
+    {
+      "url": "https://developer.android.com/develop/ui/compose/accessibility/api-defaults",
+      "retrieved": true
+    },
+    {
+      "url": "https://developer.android.com/build/migrate-to-built-in-kotlin",
+      "retrieved": true
+    }
+  ],
+  "qualification": {
+    "bunHost": "1.4.4 revision2ae8fc65fba1d05c423a2433b1195835109942b6",
+    "bunFfiRealDll": true,
+    "javaJni21": true,
+    "javaFfm27": true,
+    "androidTauri": false,
+    "androidBunRuntime": false
+  }
+}
