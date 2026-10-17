@@ -27,6 +27,11 @@ user namespaces and records per-game support. See `docs/CACHYOS-SUITE.md`.
 Dedicated-server and SteamPipe provisioning use the pinned SteamCMD container
 owner described in `docs/STEAM-PLATFORM.md`.
 
+The engine and the emulators are qualified privately against the owner's own
+BIOS, keys and game dumps. `bep import`, the verified content-addressed store,
+the encrypted bucket and VPS copies and `bep test owned` are described in
+[`OWNED-DUMPS.md`](OWNED-DUMPS.md).
+
 The Windows desktop path pins the Aphrody fork of Try Omarchy under
 `crates/omarchy-windows`. Its launcher consumes QEMU from MSYS2 directly through
 `TRYOMARCHY_MSYS2_ROOT` and keeps WHPX, guest images and runtime supervision in

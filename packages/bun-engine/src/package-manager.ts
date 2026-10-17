@@ -8,6 +8,7 @@ import { biosReport } from "./libretro";
 import { indexMirrors, listMirrors, probeMirrors } from "./mirrors";
 import { probeMedia, probeNativeCapabilities } from "./native-capabilities";
 import { NintendoDsFirmware } from "./nds/loader";
+import { ownedUsage, runImport, runOwned, runTestOwned } from "./owned/cli";
 
 const usage = [
   "bep init",
@@ -18,6 +19,7 @@ const usage = [
   "bep cache [prune [project-dir...]] | usr (installed release binaries) | roms [console] (free ROMs) | bios [libretro-core...] (BIOS status by MD5) | mirrors [index|probe [service]|service]",
   "bep consoles | firmware:index | firmware:list [console] | run <system> <image> [options]",
   "bep ds:load [dir] | system:probe [path] | media:probe <file> | bun <bun-arguments>",
+  ...ownedUsage,
 ].join("\n  ");
 
 function print(value: unknown): number {
@@ -91,6 +93,10 @@ export async function runEnginePackageManager(args: string[]): Promise<number> {
     return 0;
   }
   const [command, ...rest] = args;
+  // The owner's private dumps (docs/bun-engine/OWNED-DUMPS.md).
+  if (command === "import") return runImport(rest);
+  if (command === "owned") return runOwned(rest);
+  if (command === "test" && rest[0] === "owned") return runTestOwned(rest.slice(1));
   switch (command) {
     case "init":
       return print({ manifest: await pm.init() });

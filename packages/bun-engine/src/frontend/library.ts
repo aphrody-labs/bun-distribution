@@ -318,9 +318,10 @@ async function hashFile(
   return hashes;
 }
 
-interface DatRow {
+export interface DatRow {
   dat: string;
   name: string;
+  size?: number | null;
   description: string | null;
   developer: string | null;
   year: string | null;
@@ -347,6 +348,39 @@ function matchDat(
     (hashes.headerless ? byCrc.get(hashes.headerless, dats) : null) ??
     undefined
   );
+}
+
+/**
+ * Verifies one dump against the No-Intro/Redump DATs of `system` (imported on demand): a CRC32
+ * match with the same size, an MD5 match, or the CRC32 without the copier header. `serial` lists
+ * the DAT entries sharing the header serial, so a size mismatch can be told from a missing revision.
+ */
+export async function verifyDump(
+  system: SystemDefinition,
+  dump: { crc: string; md5: string; size: number; headerless?: string; serial?: string | null },
+): Promise<{ match?: DatRow; serial: DatRow[] }> {
+  if (!system.dats.length) return { serial: [] };
+  ensureDatabase();
+  for (const dat of system.dats) await importDat(dat);
+  const dats = JSON.stringify(system.dats);
+  const scoped = "dat IN (SELECT value FROM json_each($dats))";
+  const match =
+    db()
+      .query<DatRow, { crc: string; md5: string; size: number; dats: string }>(
+        `SELECT * FROM dat_roms WHERE ${scoped} AND ((crc = $crc AND (size = $size OR size = 0)) OR md5 = $md5) LIMIT 1`,
+      )
+      .get({ crc: dump.crc, md5: dump.md5, size: dump.size, dats }) ??
+    (dump.headerless
+      ? db()
+          .query<DatRow, { crc: string; dats: string }>(`SELECT * FROM dat_roms WHERE ${scoped} AND crc = $crc LIMIT 1`)
+          .get({ crc: dump.headerless, dats })
+      : null);
+  const serial = dump.serial?.trim()
+    ? db()
+        .query<DatRow, { serial: string; dats: string }>(`SELECT * FROM dat_roms WHERE ${scoped} AND serial = $serial LIMIT 50`)
+        .all({ serial: dump.serial.trim(), dats })
+    : [];
+  return { ...(match ? { match } : {}), serial };
 }
 
 /** A note shipped next to a free ROM (TetaNES bundles `<game>.txt`). */
@@ -398,7 +432,10 @@ async function* candidates(): AsyncGenerator<Candidate> {
         onlyFiles: true,
       })) {
         const rom = (await Bun.file(path).json()) as FirmwareManifest;
-        const system = (await systemsForConsole(rom.console))[0];
+        // Owned dumps of systems without a catalog console are filed under the system id.
+        const system =
+          (await systemsForConsole(rom.console))[0] ??
+          (await loadSystems()).systems.find((item) => item.id === rom.console);
         const candidate = {
           path: join(dirname(path), rom.file),
           system: system!,

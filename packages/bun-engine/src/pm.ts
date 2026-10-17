@@ -820,8 +820,9 @@ export async function pruneCache(projectDirs: string[]): Promise<string[]> {
       absolute: true,
       onlyFiles: true,
     })) {
-      const manifest = (await Bun.file(path).json()) as FirmwareManifest;
-      if (keep.has(manifest.sha256)) continue;
+      const manifest = (await Bun.file(path).json()) as FirmwareManifest & { origin?: string };
+      // Owned dumps belong to `bep owned`, never to a project lock.
+      if (keep.has(manifest.sha256) || manifest.origin === "owned") continue;
       await Bun.file(join(dirname(path), manifest.file)).delete();
       await Bun.file(path).delete();
       removed.push(`${manifest.console}/${manifest.file}`);

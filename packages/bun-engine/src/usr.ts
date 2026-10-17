@@ -14,6 +14,11 @@ import { basename, join, relative, resolve } from "node:path";
 export const repoRoot = resolve(import.meta.dir, "..", "..", "..");
 const sevenZip = ["7z", "C:\\Program Files\\7-Zip\\7z.exe"];
 
+/** The 7-Zip executable bep unpacks 7z/rar/xz archives with, when one is installed. */
+export function sevenZipTool(): string | undefined {
+  return sevenZip.find(tool => Bun.which(tool) || existsSync(tool));
+}
+
 export function usrRoot(): string {
   return resolve(Bun.env.BEP_ROOT ?? join(repoRoot, "usr"));
 }
@@ -101,7 +106,7 @@ function run(cmd: string[]): boolean {
 async function unpack(archive: string, into: string, pkg: ReleasePackage): Promise<void> {
   await mkdir(into, { recursive: true });
   const name = basename(archive).toLowerCase();
-  const sevenZ = sevenZip.find(tool => Bun.which(tool) || existsSync(tool));
+  const sevenZ = sevenZipTool();
   if (pkg.selfExtracting) {
     if (!run([archive, `-o${into}`, "-y"]) && !(sevenZ && run([sevenZ, "x", "-y", `-o${into}`, archive])))
       throw new Error(`could not unpack ${name}`);
