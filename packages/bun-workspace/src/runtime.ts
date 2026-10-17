@@ -29,16 +29,15 @@ export interface Runtime extends RuntimeFacts {
 }
 
 const revisionPattern = /^[0-9a-f]{40}$/;
+export const runtimeVersionPattern = /^d+.d+.d+$/;
 
 export function nativeRuntimeTarget(): RuntimeTarget | undefined {
   const platform = process.platform === "win32" ? "windows" : process.platform;
   const architecture = process.arch;
   const libc =
     platform === "linux" &&
-    !(
-      process.report?.getReport() as
-        { header?: { glibcVersionRuntime?: string } } | undefined
-    )?.header?.glibcVersionRuntime
+    !(process.report?.getReport() as { header?: { glibcVersionRuntime?: string } } | undefined)?.header
+      ?.glibcVersionRuntime
       ? "-musl"
       : "";
   const target = `${platform}-${architecture}${libc}`;
@@ -69,16 +68,13 @@ export function currentRuntimeFacts(): RuntimeFacts {
 }
 
 /** Inspect declared provenance separately from archive or executable digest verification. */
-export function runtimeFromFacts(
-  expected: RuntimePin,
-  facts: RuntimeFacts,
-): Runtime {
+export function runtimeFromFacts(expected: RuntimePin, facts: RuntimeFacts): Runtime {
   if (
     expected.repository !== "aphrody-labs/bun" ||
-    expected.version !== "1.4.4" ||
+    !runtimeVersionPattern.test(expected.version) ||
     !revisionPattern.test(expected.revision)
   ) {
-    throw new Error("A pinned Aphrody Bun 1.4.4 runtime is required.");
+    throw new Error("A pinned Aphrody Bun runtime is required.");
   }
   const { version, revision, sourceUrl } = facts;
   let recognizedFork = false;
@@ -87,13 +83,9 @@ export function runtimeFromFacts(
       const source = new URL(sourceUrl);
       const path = source.pathname.split("/");
       const tag = path[5];
-      const revisionTag = tag?.startsWith(`${expected.version}+`)
-        ? tag.slice(expected.version.length + 1)
-        : null;
+      const revisionTag = tag?.startsWith(`${expected.version}+`) ? tag.slice(expected.version.length + 1) : null;
       const pinnedTag =
-        revisionTag !== null &&
-        /^[0-9a-f]{7,40}$/.test(revisionTag) &&
-        revision.startsWith(revisionTag);
+        revisionTag !== null && /^[0-9a-f]{7,40}$/.test(revisionTag) && revision.startsWith(revisionTag);
       recognizedFork =
         source.protocol === "https:" &&
         source.hostname === "github.com" &&
@@ -122,17 +114,9 @@ export function runtimeFromFacts(
 }
 
 /** Usable by compiled applications without checkout configuration or Git. */
-export function assertRuntimeFacts(
-  expected: RuntimePin,
-  facts: RuntimeFacts,
-  allowRevisionDrift = false,
-): Runtime {
+export function assertRuntimeFacts(expected: RuntimePin, facts: RuntimeFacts, allowRevisionDrift = false): Runtime {
   const runtime = runtimeFromFacts(expected, facts);
-  if (
-    !runtime.recognizedFork ||
-    !runtime.versionMatches ||
-    (!allowRevisionDrift && !runtime.revisionMatches)
-  ) {
+  if (!runtime.recognizedFork || !runtime.versionMatches || (!allowRevisionDrift && !runtime.revisionMatches)) {
     throw new Error(
       `Required runtime: ${expected.repository} ${expected.version}+${expected.revision}. Observed: ${runtime.version}+${runtime.revision}; provenance ${runtime.recognizedFork ? "valid" : "invalid"}.`,
     );

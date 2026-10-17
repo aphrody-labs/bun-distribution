@@ -4,6 +4,7 @@ import {
   currentRuntimeFacts,
   nativeRuntimeTarget,
   runtimeFromFacts,
+  runtimeVersionPattern,
   type Runtime,
   type RuntimePin,
   type RuntimeTarget,
@@ -185,7 +186,8 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
     throw new Error("aphrody.config.json: schemaVersion 1 and runtime required.");
   }
   if (
-    value.runtime.version !== "1.4.4" ||
+    typeof value.runtime.version !== "string" ||
+    !runtimeVersionPattern.test(value.runtime.version) ||
     value.runtime.repository !== "aphrody-labs/bun" ||
     typeof value.runtime.revision !== "string" ||
     !revisionPattern.test(value.runtime.revision)
@@ -207,7 +209,8 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
           "darwin-arm64",
         ].includes(target) ||
         !object(pin) ||
-        pin.version !== "1.4.4" ||
+        typeof pin.version !== "string" ||
+        !runtimeVersionPattern.test(pin.version) ||
         pin.repository !== "aphrody-labs/bun" ||
         typeof pin.revision !== "string" ||
         !revisionPattern.test(pin.revision)
