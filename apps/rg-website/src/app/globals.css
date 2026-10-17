@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* Base explicite : le build peut tourner depuis la racine du monorepo. */
+@import "tailwindcss" source("../..");
 @import "tw-animate-css";
 @import "@rosegriffon/ui/styles.css";
 @import "./sprites.css";
